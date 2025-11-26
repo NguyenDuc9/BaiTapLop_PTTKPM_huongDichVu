@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đăng nhập — Demo</title>
+    <link rel="stylesheet" href="Login.css" />
+  </head>
+  <body>
+    <main class="container">
+      <form id="loginForm" class="card" autocomplete="off" novalidate>
+        <h1 class="title">Đăng nhập</h1>
+
+        <label class="field">
+          <span class="label-text">Tài khoản</span>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="Nhập tài khoản"
+            required
+          />
+          <small class="hint" id="userHint"></small>
+        </label>
+
+        <label class="field">
+          <span class="label-text">Mật khẩu</span>
+          <div class="password-row">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Nhập mật khẩu"
+              required
+            />
+            <button type="button" id="toggleClear" class="icon-btn" title="Xóa">
+              ✕
+            </button>
+          </div>
+          <small class="hint" id="passHint"></small>
+        </label>
+
+        <div class="controls">
+          <div class="show-password">
+            <label
+              ><input type="radio" name="showPwd" value="hide" checked />
+              Ẩn</label
+            >
+            <label
+              ><input type="radio" name="showPwd" value="show" /> Hiện</label
+            >
+          </div>
+
+          <label class="remember">
+            <input type="checkbox" id="remember" name="remember" /> Ghi nhớ đăng
+            nhập
+          </label>
+        </div>
+
+        <button id="loginBtn" class="btn primary" type="submit">
+          Đăng nhập
+        </button>
+
+        <div class="divider"><span>hoặc</span></div>
+
+        <div class="alt-actions">
+          <button type="button" class="btn ghost" id="loginDemo">
+            Đăng nhập
+          </button>
+          <a class="link" href="#">Quên mật khẩu?</a>
+        </div>
+
+        <div id="message" role="status" aria-live="polite"></div>
+      </form>
+    </main>
+
+    <script src="Login.js"></script>
+  </body>
+</html>
