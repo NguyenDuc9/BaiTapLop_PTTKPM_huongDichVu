@@ -1,3 +1,5 @@
+import config from '../config/config.js';
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("loginForm");
   const username = document.getElementById("username");
@@ -20,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   radios.forEach((r) => r.addEventListener("change", applyRadio));
 
-  // Đăng nhập demo
   document.getElementById("loginDemo").addEventListener("click", () => {
     username.value = "demo";
     password.value = "password123";
@@ -47,15 +48,48 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Fake API login
-    setTimeout(() => {
-      if (u === "demo" && p === "password123") {
-        message.style.color = "green";
-        message.textContent = "Đăng nhập thành công!";
-      } else {
-        message.style.color = "red";
-        message.textContent = "Sai tài khoản hoặc mật khẩu";
+    // Gọi API login
+    const loginUrl = config.getUrl(config.endpoints.LOGIN);
+    
+    fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: u,
+        password: p
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Đăng nhập thất bại');
       }
-    }, 600);
+      return response.json();
+    })
+    .then(data => {
+      message.style.color = "green";
+      message.textContent = "Đăng nhập thành công!";
+      
+      // Lưu thông tin user và token
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+      }
+      
+      console.log('Login success:', data);
+      
+      // Redirect đến Dashboard sau 1 giây
+      setTimeout(() => {
+        window.location.href = '../pages/Dashboard.html';
+      }, 1000);
+    })
+    .catch(error => {
+      message.style.color = "red";
+      message.textContent = "Sai tài khoản hoặc mật khẩu";
+      console.error('Login error:', error);
+    });
   });
 });

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bán hàng - POS</title>
+    <link rel="stylesheet" href="../assest/Dashboard.css" />
+    <link rel="stylesheet" href="../assest/POS.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <!-- Include sidebar from Dashboard -->
+    <div class="pos-container">
+      <!-- Left: Product Selection -->
+      <section class="product-section">
+        <div class="section-header">
+          <h2><i class="fas fa-shopping-bag"></i> Chọn sản phẩm</h2>
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="productSearch" placeholder="Tìm kiếm sản phẩm...">
+          </div>
+        </div>
+
+        <div class="category-filter">
+          <button class="filter-btn active" data-category="all">Tất cả</button>
+          <button class="filter-btn" data-category="beverage">Đồ uống</button>
+          <button class="filter-btn" data-category="snack">Snack</button>
+          <button class="filter-btn" data-category="food">Thực phẩm</button>
+          <button class="filter-btn" data-category="other">Khác</button>
+        </div>
+
+        <div class="product-grid" id="productGrid">
+          <!-- Products will be loaded here -->
+          <div class="loading">Đang tải sản phẩm...</div>
+        </div>
+      </section>
+
+      <!-- Right: Cart & Checkout -->
+      <section class="cart-section">
+        <div class="cart-header">
+          <h2><i class="fas fa-shopping-cart"></i> Giỏ hàng</h2>
+          <button class="btn-clear-cart" id="clearCart">
+            <i class="fas fa-trash"></i> Xóa tất cả
+          </button>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="customer-info">
+          <div class="customer-select">
+            <label>Khách hàng:</label>
+            <div class="customer-input-group">
+              <input type="text" id="customerSearch" placeholder="Tìm hoặc thêm khách hàng">
+              <button class="btn-add-customer" id="addCustomer">
+                <i class="fas fa-user-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="customer-points" id="customerPoints" style="display: none;">
+            <i class="fas fa-star"></i>
+            <span>Điểm tích lũy: <strong id="pointsValue">0</strong></span>
+          </div>
+        </div>
+
+        <!-- Cart Items -->
+        <div class="cart-items" id="cartItems">
+          <div class="empty-cart">
+            <i class="fas fa-shopping-cart"></i>
+            <p>Giỏ hàng trống</p>
+            <small>Vui lòng chọn sản phẩm</small>
+          </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Tạm tính:</span>
+            <strong id="subtotal">0 đ</strong>
+          </div>
+          <div class="summary-row">
+            <span>Giảm giá:</span>
+            <strong id="discount">0 đ</strong>
+          </div>
+          <div class="summary-row discount-input">
+            <input type="number" id="discountPercent" placeholder="%" min="0" max="100">
+            <input type="number" id="discountAmount" placeholder="Số tiền" min="0">
+          </div>
+          <div class="summary-row total">
+            <span>Tổng cộng:</span>
+            <strong id="total">0 đ</strong>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="cart-actions">
+          <button class="btn-secondary" id="btnHold">
+            <i class="fas fa-pause"></i>
+            Tạm giữ
+          </button>
+          <button class="btn-primary" id="btnCheckout">
+            <i class="fas fa-cash-register"></i>
+            Thanh toán
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-credit-card"></i> Thanh toán</h3>
+          <button class="modal-close" id="closeModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="payment-summary">
+            <div class="summary-item">
+              <span>Tổng tiền:</span>
+              <strong id="modalTotal">0 đ</strong>
+            </div>
+          </div>
+
+          <div class="payment-method">
+            <label>Phương thức thanh toán:</label>
+            <div class="payment-options">
+              <button class="payment-btn active" data-method="cash">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Tiền mặt</span>
+              </button>
+              <button class="payment-btn" data-method="card">
+                <i class="fas fa-credit-card"></i>
+                <span>Thẻ</span>
+              </button>
+              <button class="payment-btn" data-method="transfer">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Chuyển khoản</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="payment-input">
+            <label>Khách đưa:</label>
+            <input type="number" id="receivedAmount" placeholder="Nhập số tiền">
+            <div class="quick-amounts">
+              <button class="quick-amount" data-amount="50000">50k</button>
+              <button class="quick-amount" data-amount="100000">100k</button>
+              <button class="quick-amount" data-amount="200000">200k</button>
+              <button class="quick-amount" data-amount="500000">500k</button>
+            </div>
+          </div>
+
+          <div class="change-amount">
+            <span>Tiền thừa:</span>
+            <strong id="changeAmount">0 đ</strong>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btnCancelPayment">Hủy</button>
+          <button class="btn-primary" id="btnConfirmPayment">
+            <i class="fas fa-check"></i> Xác nhận
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="../script/POS.js"></script>
+  </body>
+</html>
+
