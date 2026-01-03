@@ -6,6 +6,7 @@ let currentCustomer = null;
 let discountPercent = 0;
 let discountAmount = 0;
 let selectedPaymentMethod = 'cash';
+let currentUser = null;
 
 const productGrid = document.getElementById('productGrid');
 const cartItems = document.getElementById('cartItems');
@@ -37,6 +38,11 @@ function initializeApp() {
   if (!token) {
     window.location.href = '../auth/Login.html';
     return;
+  }
+  
+  const storedUser = localStorage.getItem('currentUser');
+  if (storedUser) {
+    currentUser = JSON.parse(storedUser);
   }
   
   // Load cart from localStorage
@@ -446,16 +452,35 @@ async function confirmPayment() {
   }
   
   try {
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    let discountValue = 0;
+    
+    if (discountPercent > 0) {
+      discountValue = subtotal * (discountPercent / 100);
+    } else if (discountAmount > 0) {
+      discountValue = discountAmount;
+    }
+
+    const paymentMethodMap = {
+      cash: 'Cash',
+      card: 'Card',
+      transfer: 'Bank'
+    };
+
     const invoiceData = {
-      items: cart,
+      invoiceNumber: null,
       customerId: currentCustomer?.id || null,
-      subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      discount: discountPercent > 0 ? discountPercent : discountAmount,
-      discountType: discountPercent > 0 ? 'percent' : 'amount',
-      total: total,
-      paymentMethod: selectedPaymentMethod,
-      receivedAmount: received,
-      changeAmount: received - total
+      userId: currentUser?.id || null,
+      discount: discountValue,
+      paidAmount: received,
+      paymentMethod: paymentMethodMap[selectedPaymentMethod] || 'Cash',
+      notes: 'Bán lẻ tại quầy',
+      details: cart.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        discount: 0
+      }))
     };
     
     const response = await fetch(config.getUrl(config.endpoints.CREATE_INVOICE), {
@@ -473,8 +498,7 @@ async function confirmPayment() {
     
     const invoice = await response.json();
     
-    // Success
-    alert(`Thanh toán thành công!\nMã hóa đơn: ${invoice.id || 'HD' + Date.now()}`);
+    alert(`Thanh toán thành công!\nMã hóa đơn: ${invoice.invoiceNumber || invoice.invoiceId || 'INV-' + Date.now()}`);
     
     // Print invoice option
     if (confirm('Bạn có muốn in hóa đơn?')) {
@@ -487,17 +511,7 @@ async function confirmPayment() {
     
   } catch (error) {
     console.error('Payment error:', error);
-    
-    // Mock success for demo
-    const invoiceId = 'HD' + Date.now();
-    alert(`Thanh toán thành công!\nMã hóa đơn: ${invoiceId}`);
-    
-    if (confirm('Bạn có muốn in hóa đơn?')) {
-      printInvoice({ id: invoiceId, ...calculateTotal() });
-    }
-    
-    clearCart();
-    closePaymentModal();
+    alert('Thanh toán thất bại, vui lòng thử lại.');
   }
 }
 
