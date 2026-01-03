@@ -9,7 +9,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body>
-    <!-- Include sidebar from Dashboard -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Bán hàng</h1>
+      </div>
+      <div class="header-right">
+        <button class="logout-btn" id="posLogoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </header>
+
     <div class="pos-container">
       <!-- Left: Product Selection -->
       <section class="product-section">
@@ -77,12 +88,22 @@
             <strong id="subtotal">0 đ</strong>
           </div>
           <div class="summary-row">
+            <span>Thuế:</span>
+            <strong id="taxAmount">0 đ</strong>
+          </div>
+          <div class="summary-row">
             <span>Giảm giá:</span>
             <strong id="discount">0 đ</strong>
           </div>
           <div class="summary-row discount-input">
             <input type="number" id="discountPercent" placeholder="%" min="0" max="100">
             <input type="number" id="discountAmount" placeholder="Số tiền" min="0">
+          </div>
+          <div class="summary-row">
+            <span>Khuyến mãi:</span>
+            <select id="promotionSelect">
+              <option value="">Không áp dụng</option>
+            </select>
           </div>
           <div class="summary-row total">
             <span>Tổng cộng:</span>

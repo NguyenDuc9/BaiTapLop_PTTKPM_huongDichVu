@@ -7,6 +7,10 @@ let discountPercent = 0;
 let discountAmount = 0;
 let selectedPaymentMethod = 'cash';
 let currentUser = null;
+let promotions = [];
+let taxes = [];
+let selectedPromotion = null;
+let selectedTax = null;
 
 const productGrid = document.getElementById('productGrid');
 const cartItems = document.getElementById('cartItems');
@@ -16,6 +20,8 @@ const clearCartBtn = document.getElementById('clearCart');
 const checkoutBtn = document.getElementById('btnCheckout');
 const holdBtn = document.getElementById('btnHold');
 const filterBtns = document.querySelectorAll('.filter-btn');
+const posLogoutBtn = document.getElementById('posLogoutBtn');
+const promotionSelect = document.getElementById('promotionSelect');
 
 // Modal elements
 const paymentModal = document.getElementById('paymentModal');
@@ -29,6 +35,7 @@ const quickAmountBtns = document.querySelectorAll('.quick-amount');
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
   loadProducts();
+  loadPromotionsAndTaxes();
   setupEventListeners();
 });
 
@@ -100,6 +107,14 @@ function setupEventListeners() {
   holdBtn.addEventListener('click', () => {
     holdOrder();
   });
+
+  if (posLogoutBtn) {
+    posLogoutBtn.addEventListener('click', handleLogout);
+  }
+
+  if (promotionSelect) {
+    promotionSelect.addEventListener('change', handlePromotionChange);
+  }
   
   // Discount inputs
   document.getElementById('discountPercent').addEventListener('input', (e) => {
@@ -190,6 +205,59 @@ async function loadProducts() {
     products = generateMockProducts();
     renderProducts(products);
   }
+}
+
+async function loadPromotionsAndTaxes() {
+  try {
+    // Load active promotions
+    const promoUrl = config.buildUrlWithQuery(config.endpoints.PROMOTIONS, { isActive: true });
+    const promoRes = await fetch(promoUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (promoRes.ok) {
+      promotions = await promoRes.json();
+      renderPromotionOptions(promotions);
+    }
+    
+    // Load active taxes
+    const taxUrl = config.buildUrlWithQuery(config.endpoints.TAXES, { isActive: true });
+    const taxRes = await fetch(taxUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (taxRes.ok) {
+      taxes = await taxRes.json();
+      // Optional: choose default tax (first active)
+      selectedTax = Array.isArray(taxes) && taxes.length > 0 ? taxes[0] : null;
+      updateCartSummary();
+    }
+  } catch (err) {
+    console.error('Error loading promotions/taxes:', err);
+  }
+}
+
+function renderPromotionOptions(list) {
+  if (!promotionSelect) return;
+  const options = ['<option value="">Không áp dụng</option>'].concat(
+    (Array.isArray(list) ? list : []).map(p => {
+      const label = `${p.promotionCode || ''} - ${p.promotionName || ''}`;
+      return `<option value="${p.promotionId}">${label}</option>`;
+    })
+  );
+  promotionSelect.innerHTML = options.join('');
+}
+
+function handlePromotionChange(e) {
+  const id = parseInt(e.target.value) || null;
+  selectedPromotion = (Array.isArray(promotions) ? promotions : []).find(p => p.promotionId === id) || null;
+  updateCartSummary();
 }
 
 function mapCategoryNameToKey(categoryName) {
@@ -378,17 +446,45 @@ function renderCart() {
 function updateCartSummary() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  let discount = 0;
+  let manualDiscount = 0;
   if (discountPercent > 0) {
-    discount = subtotal * (discountPercent / 100);
+    manualDiscount = subtotal * (discountPercent / 100);
   } else if (discountAmount > 0) {
-    discount = discountAmount;
+    manualDiscount = discountAmount;
   }
-  
-  const total = subtotal - discount;
-  
+
+  let promoDiscount = 0;
+  if (selectedPromotion && selectedPromotion.isActive !== false) {
+    const applyToOrder = selectedPromotion.applyTo === 'order' || selectedPromotion.applyTo === 'invoice' || !selectedPromotion.applyTo;
+    const meetsMin = !selectedPromotion.minOrderAmount || subtotal >= selectedPromotion.minOrderAmount;
+    if (applyToOrder && meetsMin) {
+      const type = (selectedPromotion.discountType || '').toLowerCase();
+      const value = selectedPromotion.discountValue || 0;
+      if (type === 'percent' || type === 'percentage') {
+        promoDiscount = subtotal * (value / 100);
+      } else {
+        promoDiscount = value;
+      }
+    }
+  }
+
+  const discount = manualDiscount + promoDiscount;
+
+  let taxAmount = 0;
+  if (selectedTax && selectedTax.isActive !== false) {
+    const rate = selectedTax.taxRate || 0;
+    const taxableBase = Math.max(0, subtotal - discount);
+    taxAmount = taxableBase * (rate / 100);
+  }
+
+  const total = Math.max(0, subtotal - discount + taxAmount);
+
   document.getElementById('subtotal').textContent = formatCurrency(subtotal);
   document.getElementById('discount').textContent = formatCurrency(discount);
+  const taxEl = document.getElementById('taxAmount');
+  if (taxEl) {
+    taxEl.textContent = formatCurrency(taxAmount);
+  }
   document.getElementById('total').textContent = formatCurrency(total);
 }
 
@@ -422,15 +518,40 @@ function closePaymentModal() {
 
 function calculateTotal() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  let discount = 0;
-  
+
+  let manualDiscount = 0;
   if (discountPercent > 0) {
-    discount = subtotal * (discountPercent / 100);
+    manualDiscount = subtotal * (discountPercent / 100);
   } else if (discountAmount > 0) {
-    discount = discountAmount;
+    manualDiscount = discountAmount;
   }
-  
-  return subtotal - discount;
+
+  let promoDiscount = 0;
+  if (selectedPromotion && selectedPromotion.isActive !== false) {
+    const applyToOrder = selectedPromotion.applyTo === 'order' || selectedPromotion.applyTo === 'invoice' || !selectedPromotion.applyTo;
+    const meetsMin = !selectedPromotion.minOrderAmount || subtotal >= selectedPromotion.minOrderAmount;
+    if (applyToOrder && meetsMin) {
+      const type = (selectedPromotion.discountType || '').toLowerCase();
+      const value = selectedPromotion.discountValue || 0;
+      if (type === 'percent' || type === 'percentage') {
+        promoDiscount = subtotal * (value / 100);
+      } else {
+        promoDiscount = value;
+      }
+    }
+  }
+
+  const discount = manualDiscount + promoDiscount;
+
+  let taxAmount = 0;
+  if (selectedTax && selectedTax.isActive !== false) {
+    const rate = selectedTax.taxRate || 0;
+    const taxableBase = Math.max(0, subtotal - discount);
+    taxAmount = taxableBase * (rate / 100);
+  }
+
+  const total = Math.max(0, subtotal - discount + taxAmount);
+  return total;
 }
 
 function calculateChange() {
@@ -453,13 +574,15 @@ async function confirmPayment() {
   
   try {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    let discountValue = 0;
-    
+
+    let manualDiscount = 0;
     if (discountPercent > 0) {
-      discountValue = subtotal * (discountPercent / 100);
+      manualDiscount = subtotal * (discountPercent / 100);
     } else if (discountAmount > 0) {
-      discountValue = discountAmount;
+      manualDiscount = discountAmount;
     }
+
+    const discountValue = manualDiscount;
 
     const paymentMethodMap = {
       cash: 'Cash',
@@ -472,6 +595,8 @@ async function confirmPayment() {
       customerId: currentCustomer?.id || null,
       userId: currentUser?.id || null,
       discount: discountValue,
+      promotionId: selectedPromotion?.promotionId || null,
+      promotionCode: selectedPromotion?.promotionCode || null,
       paidAmount: received,
       paymentMethod: paymentMethodMap[selectedPaymentMethod] || 'Cash',
       notes: 'Bán lẻ tại quầy',
@@ -492,11 +617,22 @@ async function confirmPayment() {
       body: JSON.stringify(invoiceData)
     });
     
+    let rawResult;
+    const text = await response.text();
+    try {
+      rawResult = text ? JSON.parse(text) : null;
+    } catch {
+      rawResult = text;
+    }
+
     if (!response.ok) {
-      throw new Error('Failed to create invoice');
+      console.error('Create invoice failed', response.status, rawResult);
+      const message = rawResult && rawResult.message ? rawResult.message : 'Thanh toán thất bại, vui lòng thử lại.';
+      alert(message);
+      return;
     }
     
-    const invoice = await response.json();
+    const invoice = rawResult;
     
     alert(`Thanh toán thành công!\nMã hóa đơn: ${invoice.invoiceNumber || invoice.invoiceId || 'INV-' + Date.now()}`);
     
@@ -543,6 +679,14 @@ function holdOrder() {
   alert(`Đơn hàng đã được tạm giữ!\nMã: ${orderId}`);
   
   clearCart();
+}
+
+function handleLogout() {
+  if (confirm('Bạn có chắc muốn đăng xuất?')) {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    window.location.href = '../auth/Login.html';
+  }
 }
 
 // ===== CUSTOMER FUNCTIONS =====

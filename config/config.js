@@ -64,6 +64,14 @@ const config = {
     USER_CREATE: "/api/users/create",
     USER_UPDATE: "/api/users/update/:id",
     USER_DELETE: "/api/users/delete/:id",
+
+    // Promotions
+    PROMOTIONS: "/api/promotions",
+    PROMOTION_BY_ID: "/api/promotions/:id",
+
+    // Taxes
+    TAXES: "/api/taxes",
+    TAX_BY_ID: "/api/taxes/:id",
   },
   
   // Helper function để lấy full URL
