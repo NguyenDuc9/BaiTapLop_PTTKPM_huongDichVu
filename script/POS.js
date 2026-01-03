@@ -140,7 +140,8 @@ function setupEventListeners() {
 // ===== PRODUCT FUNCTIONS =====
 async function loadProducts() {
   try {
-    const response = await fetch(config.getUrl(config.endpoints.PRODUCTS), {
+    const url = config.buildUrlWithQuery(config.endpoints.PRODUCTS, { isActive: true });
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -152,14 +153,51 @@ async function loadProducts() {
       throw new Error('Failed to load products');
     }
     
-    products = await response.json();
+    const data = await response.json();
+    products = Array.isArray(data)
+      ? data
+          .filter(p => p && (p.isActive === undefined || p.isActive === true))
+          .map(p => ({
+            id: p.productId,
+            code: p.productCode,
+            barcode: p.barcode,
+            name: p.productName,
+            categoryId: p.categoryId,
+            categoryName: p.categoryName,
+            category: mapCategoryNameToKey(p.categoryName),
+            supplierId: p.supplierId,
+            supplierName: p.supplierName,
+            unit: p.unit,
+            costPrice: p.costPrice,
+            price: p.sellingPrice,
+            stock: p.stockQuantity,
+            minStock: p.minStock,
+            image: p.imageUrl,
+            isActive: p.isActive,
+            createdAt: p.createdAt
+          }))
+      : [];
+    
     renderProducts(products);
   } catch (error) {
     console.error('Error loading products:', error);
-    // Use mock data
     products = generateMockProducts();
     renderProducts(products);
   }
+}
+
+function mapCategoryNameToKey(categoryName) {
+  const name = (categoryName || "").toLowerCase();
+  if (name.includes("beverage") || name.includes("drink") || name.includes("nước") || name.includes("đồ uống")) {
+    return "beverage";
+  }
+  if (name.includes("snack") || name.includes("ăn vặt")) {
+    return "snack";
+  }
+  if (name.includes("food") || name.includes("thực phẩm")) {
+    return "food";
+  }
+  return "other";
 }
 
 function generateMockProducts() {
