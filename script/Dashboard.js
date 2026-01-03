@@ -19,6 +19,7 @@ let currentUser = {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
+  hideInputTrack();
   initializeApp();
   loadDashboardData();
   updateDateTime();
@@ -39,7 +40,7 @@ function initializeApp() {
 
   // Setup event listeners
   setupEventListeners();
-  
+
   // Check admin permissions
   toggleAdminFeatures();
 }
@@ -64,11 +65,11 @@ function setupEventListeners() {
       if (page) {
         e.preventDefault();
         navigateToPage(page);
-        
+
         // Update active state
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
         item.closest('.nav-item').classList.add('active');
-        
+
         // Close mobile menu
         if (window.innerWidth <= 768) {
           sidebar.classList.remove('mobile-open');
@@ -84,11 +85,11 @@ function setupEventListeners() {
         e.preventDefault();
         const submenuId = item.getAttribute('data-submenu');
         const submenu = document.getElementById(submenuId);
-        
+
         // Toggle submenu
         submenu.classList.toggle('open');
         item.classList.toggle('active');
-        
+
         // Close other submenus
         hasSubmenuItems.forEach(other => {
           if (other !== item) {
@@ -118,7 +119,7 @@ function setupEventListeners() {
 function navigateToPage(page) {
   console.log(`Navigating to: ${page}`);
   pageTitle.textContent = getPageTitle(page);
-  
+
   // Here you would load the appropriate content
   // For now, we'll just log it
   loadPageContent(page);
@@ -192,15 +193,29 @@ function updateDateTime() {
 }
 
 // ===== DASHBOARD DATA =====
+function formatYYYYMMDD(date) {
+  return new Promise((resolve, reject) => {
+    if (!(date instanceof Date) || isNaN(date)) {
+      reject(new Error('Invalid Date'));
+      return;
+    }
+
+    const result = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+    resolve(result);
+  });
+}
 async function loadDashboardData() {
   try {
-    // Load dashboard statistics
+    const date = await formatYYYYMMDD(new Date());
+    document
+      .querySelector('[data-role="btn-rebuild"]')
+      .addEventListener('click', reBuild);
     await Promise.all([
-      loadStatistics(),
-      loadRecentOrders(),
-      loadLowStockAlerts(),
-      loadTopProducts(),
-      loadSalesChart()
+      loadStatisticsByDay(date),
+      // loadRecentOrders(),
+      // loadLowStockAlerts(),
+      // loadTopProducts(),
+      // loadSalesChart()
     ]);
   } catch (error) {
     console.error('Error loading dashboard data:', error);
@@ -208,9 +223,52 @@ async function loadDashboardData() {
   }
 }
 
-async function loadStatistics() {
+async function loadStatisticsByDay(date) {
   try {
-    const response = await fetch(config.getUrl(config.endpoints.DASHBOARD_STATS), {
+    const url = `${config.getUrl(config.endpoints.DASHBOARD_DAY)}?date=${encodeURIComponent(date)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+
+    });
+
+    // Parse JSON trước
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Ném lỗi kèm message từ server
+      throw {
+        status: response.status,
+        message: result.message || 'Unknown server error'
+      };
+    }
+
+    updateStatistics(result);
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+    alert("Không thể tính được tuần trong tương lai")
+    // Use mock data for demonstration
+    // updateStatistics({
+    //   todayRevenue: 15750000,
+    //   todayOrders: 48,
+    //   totalProducts: 235,
+    //   totalCustomers: 1247
+    // });
+  }
+}
+
+
+async function loadStatisticsByWeek(week, year) {
+  try {
+    const url =
+      `${config.getUrl(config.endpoints.DASHBOARD_WEEK)}` +
+      `?weekNumber=${encodeURIComponent(week)}` +
+      `&year=${encodeURIComponent(year)}`;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -218,29 +276,73 @@ async function loadStatistics() {
       }
     });
 
+    // Parse JSON trước
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error('Failed to load statistics');
+      // Ném lỗi kèm message từ server
+      throw {
+        status: response.status,
+        message: result.message || 'Unknown server error'
+      };
     }
 
-    const data = await response.json();
-    updateStatistics(data);
+    updateStatistics(result);
   } catch (error) {
     console.error('Error loading statistics:', error);
+    alert("Không thể tính được tuần trong tương lai")
     // Use mock data for demonstration
-    updateStatistics({
-      todayRevenue: 15750000,
-      todayOrders: 48,
-      totalProducts: 235,
-      totalCustomers: 1247
+    // updateStatistics({
+    //   todayRevenue: 15750000,
+    //   todayOrders: 48,
+    //   totalProducts: 235,
+    //   totalCustomers: 1247
+    // });
+  }
+}
+
+async function loadStatisticsByMonth(month) {
+  try {
+    const url = `${config.getUrl(config.endpoints.DASHBOARD_MONTH)}?monthNumber=${encodeURIComponent(month)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
     });
+
+    // Parse JSON trước
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Ném lỗi kèm message từ server
+      throw {
+        status: response.status,
+        message: result.message || 'Unknown server error'
+      };
+    }
+
+    updateStatistics(result);
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+    alert("Không thể tính được tháng trong tương lai")
+    // Use mock data for demonstration
+    // updateStatistics({
+    //   todayRevenue: 15750000,
+    //   todayOrders: 48,
+    //   totalProducts: 235,
+    //   totalCustomers: 1247
+    // });
   }
 }
 
 function updateStatistics(data) {
-  document.getElementById('todayRevenue').textContent = formatCurrency(data.todayRevenue);
-  document.getElementById('todayOrders').textContent = data.todayOrders;
+  console.log('data', data)
+  document.getElementById('todayRevenue').textContent = formatCurrency(data.revenue);
+  document.getElementById('todayOrders').textContent = data.orderQuantity;
   document.getElementById('totalProducts').textContent = data.totalProducts;
-  document.getElementById('totalCustomers').textContent = data.totalCustomers;
+  document.getElementById('totalCustomers').textContent = data.customers;
 }
 
 async function loadRecentOrders() {
@@ -274,7 +376,7 @@ async function loadRecentOrders() {
 
 function displayRecentOrders(orders) {
   const tbody = document.getElementById('recentOrdersTable');
-  
+
   if (orders.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" class="text-center">Không có đơn hàng nào</td></tr>';
     return;
@@ -319,7 +421,7 @@ async function loadLowStockAlerts() {
 
 function displayLowStockAlerts(alerts) {
   const container = document.getElementById('lowStockAlerts');
-  
+
   if (alerts.length === 0) {
     container.innerHTML = '<div class="text-center">Không có cảnh báo tồn kho</div>';
     return;
@@ -367,7 +469,7 @@ async function loadTopProducts() {
 
 function displayTopProducts(products) {
   const container = document.getElementById('topProducts');
-  
+
   if (products.length === 0) {
     container.innerHTML = '<div class="text-center">Không có dữ liệu</div>';
     return;
@@ -389,35 +491,35 @@ function getMedalColor(index) {
   return colors[index] || 'var(--text-secondary)';
 }
 
-async function loadSalesChart() {
-  const ctx = document.getElementById('salesChart');
-  if (!ctx) return;
+// async function loadSalesChart() {
+//   const ctx = document.getElementById('salesChart');
+//   if (!ctx) return;
 
-  try {
-    const response = await fetch(config.getUrl(config.endpoints.SALES_CHART), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
+//   try {
+//     const response = await fetch(config.getUrl(config.endpoints.SALES_CHART), {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load chart data');
-    }
+//     if (!response.ok) {
+//       throw new Error('Failed to load chart data');
+//     }
 
-    const data = await response.json();
-    renderSalesChart(ctx, data);
-  } catch (error) {
-    console.error('Error loading chart:', error);
-    // Use mock data
-    const mockData = {
-      labels: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-      values: [3200000, 4100000, 3800000, 5200000, 4600000, 5800000, 6200000]
-    };
-    renderSalesChart(ctx, mockData);
-  }
-}
+//     const data = await response.json();
+//     renderSalesChart(ctx, data);
+//   } catch (error) {
+//     console.error('Error loading chart:', error);
+//     // Use mock data
+//     const mockData = {
+//       labels: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+//       values: [3200000, 4100000, 3800000, 5200000, 4600000, 5800000, 6200000]
+//     };
+//     renderSalesChart(ctx, mockData);
+//   }
+// }
 
 function renderSalesChart(ctx, data) {
   new Chart(ctx, {
@@ -456,7 +558,7 @@ function renderSalesChart(ctx, data) {
             size: 13
           },
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               return formatCurrency(context.parsed.y);
             }
           }
@@ -466,7 +568,7 @@ function renderSalesChart(ctx, data) {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: function(value) {
+            callback: function (value) {
               return formatCurrency(value, true);
             }
           },
@@ -527,4 +629,76 @@ window.dashboardApp = {
   navigateToPage,
   currentUser
 };
+
+function hideInputTrack() {
+  const select = document.querySelector('[data-role="select-period"]');
+
+  const inputs = {
+    day: document.querySelector('[data-role="input-day"]'),
+    week: document.querySelector('[data-role="input-week"]'),
+    month: document.querySelector('[data-role="input-month"]'),
+    year: document.querySelector('[data-role="input-year"]')
+  };
+
+  function hideAll() {
+    Object.values(inputs).forEach(input => {
+      if (input) input.hidden = true;
+    });
+  }
+
+  select.addEventListener('change', () => {
+    hideAll();
+
+    if (select.value === 'day') {
+      inputs.day.hidden = false;
+    }
+
+    if (select.value === 'week') {
+      inputs.week.hidden = false;
+      inputs.year.hidden = false;
+    }
+
+    if (select.value === 'month') {
+      inputs.month.hidden = false;
+    }
+  });
+}
+function reBuild() {
+  try {
+    const type = document.querySelector('[data-role="select-period"]').value;
+
+    if (!type) {
+      throw new Error('Chưa chọn loại thống kê');
+    }
+
+    if (type === 'day') {
+      const day = document.querySelector('[data-role="input-day"]').value;
+      if (!day) throw new Error('Vui lòng chọn ngày');
+      loadStatisticsByDay(day);
+
+    } else if (type === 'week') {
+      const week = document.querySelector('[data-role="input-week"]').value;
+      const year = document.querySelector('[data-role="input-year"]').value;
+
+      if (!week || !year) {
+        throw new Error('Vui lòng nhập đầy đủ tuần và năm');
+      }
+
+      loadStatisticsByWeek(week, year);
+
+    } else if (type === 'month') {
+      const month = document.querySelector('[data-role="input-month"]').value;
+      if (!month) throw new Error('Vui lòng chọn tháng');
+      loadStatisticsByMonth(month);
+
+    } else {
+      throw new Error('Loại thống kê không hợp lệ');
+    }
+
+  } catch (error) {
+    console.error('Lỗi rebuild thống kê:', error);
+    alert(error.message);
+  }
+}
+
 

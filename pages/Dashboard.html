@@ -1,288 +1,308 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Dashboard - Hệ thống Quản lý</title>
-    <link rel="stylesheet" href="../assest/Dashboard.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  </head>
-  <body>
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
-        <button class="toggle-btn" id="toggleSidebar">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard - Hệ thống Quản lý</title>
+  <link rel="stylesheet" href="../assest/Dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+
+<body>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
+      <button class="toggle-btn" id="toggleSidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="nav-item active">
+          <a href="#" data-page="dashboard">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <!-- Quản lý Sản phẩm -->
+        <li class="nav-item">
+          <a href="#" class="has-submenu" data-submenu="products">
+            <i class="fas fa-box"></i>
+            <span>Quản lý Sản phẩm</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </a>
+          <ul class="submenu" id="products">
+            <li><a href="#" data-page="product-list"><i class="fas fa-list"></i> Danh sách sản phẩm</a></li>
+            <li><a href="#" data-page="product-add"><i class="fas fa-plus"></i> Thêm sản phẩm</a></li>
+            <li><a href="#" data-page="category"><i class="fas fa-tags"></i> Danh mục sản phẩm</a></li>
+          </ul>
+        </li>
+
+        <!-- Quản lý Kho -->
+        <li class="nav-item">
+          <a href="#" class="has-submenu" data-submenu="warehouse">
+            <i class="fas fa-warehouse"></i>
+            <span>Quản lý Kho</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </a>
+          <ul class="submenu" id="warehouse">
+            <li><a href="#" data-page="inventory"><i class="fas fa-boxes"></i> Tồn kho</a></li>
+            <li><a href="#" data-page="import"><i class="fas fa-truck-loading"></i> Phiếu nhập</a></li>
+            <li><a href="#" data-page="export"><i class="fas fa-truck"></i> Phiếu xuất</a></li>
+          </ul>
+        </li>
+
+        <!-- Quản lý Bán hàng -->
+        <li class="nav-item">
+          <a href="#" class="has-submenu" data-submenu="sales">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Bán hàng</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </a>
+          <ul class="submenu" id="sales">
+            <li><a href="#" data-page="pos"><i class="fas fa-cash-register"></i> Bán hàng</a></li>
+            <li><a href="#" data-page="invoices"><i class="fas fa-file-invoice"></i> Hóa đơn</a></li>
+            <li><a href="#" data-page="print-invoice"><i class="fas fa-print"></i> In hóa đơn</a></li>
+          </ul>
+        </li>
+
+        <!-- Quản lý Khách hàng -->
+        <li class="nav-item">
+          <a href="#" class="has-submenu" data-submenu="customers">
+            <i class="fas fa-users"></i>
+            <span>Khách hàng</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </a>
+          <ul class="submenu" id="customers">
+            <li><a href="#" data-page="customer-list"><i class="fas fa-list"></i> Danh sách khách hàng</a></li>
+            <li><a href="#" data-page="customer-points"><i class="fas fa-star"></i> Tích điểm</a></li>
+            <li><a href="#" data-page="customer-history"><i class="fas fa-history"></i> Lịch sử mua hàng</a></li>
+          </ul>
+        </li>
+
+        <!-- Báo cáo thống kê -->
+        <li class="nav-item">
+          <a href="#" class="has-submenu" data-submenu="reports">
+            <i class="fas fa-chart-line"></i>
+            <span>Báo cáo</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </a>
+          <ul class="submenu" id="reports">
+            <li><a href="#" data-page="report-sales"><i class="fas fa-chart-bar"></i> Báo cáo doanh thu</a></li>
+            <li><a href="#" data-page="report-inventory"><i class="fas fa-chart-pie"></i> Báo cáo tồn kho</a></li>
+            <li><a href="#" data-page="report-customer"><i class="fas fa-user-chart"></i> Báo cáo khách hàng</a></li>
+          </ul>
+        </li>
+
+        <!-- Quản lý Người dùng (Admin only) -->
+        <li class="nav-item admin-only">
+          <a href="#" data-page="users">
+            <i class="fas fa-user-cog"></i>
+            <span>Quản lý người dùng</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="user-details">
+          <span class="user-name" id="userName">Admin</span>
+          <span class="user-role" id="userRole">Quản trị viên</span>
+        </div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Đăng xuất</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Header -->
+    <header class="top-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobileToggle">
           <i class="fas fa-bars"></i>
         </button>
+        <h1 id="pageTitle">Dashboard</h1>
       </div>
-
-      <nav class="sidebar-nav">
-        <ul>
-          <li class="nav-item active">
-            <a href="#" data-page="dashboard">
-              <i class="fas fa-home"></i>
-              <span>Dashboard</span>
-            </a>
-          </li>
-
-          <!-- Quản lý Sản phẩm -->
-          <li class="nav-item">
-            <a href="#" class="has-submenu" data-submenu="products">
-              <i class="fas fa-box"></i>
-              <span>Quản lý Sản phẩm</span>
-              <i class="fas fa-chevron-down arrow"></i>
-            </a>
-            <ul class="submenu" id="products">
-              <li><a href="#" data-page="product-list"><i class="fas fa-list"></i> Danh sách sản phẩm</a></li>
-              <li><a href="#" data-page="product-add"><i class="fas fa-plus"></i> Thêm sản phẩm</a></li>
-              <li><a href="#" data-page="category"><i class="fas fa-tags"></i> Danh mục sản phẩm</a></li>
-            </ul>
-          </li>
-
-          <!-- Quản lý Kho -->
-          <li class="nav-item">
-            <a href="#" class="has-submenu" data-submenu="warehouse">
-              <i class="fas fa-warehouse"></i>
-              <span>Quản lý Kho</span>
-              <i class="fas fa-chevron-down arrow"></i>
-            </a>
-            <ul class="submenu" id="warehouse">
-              <li><a href="#" data-page="inventory"><i class="fas fa-boxes"></i> Tồn kho</a></li>
-              <li><a href="#" data-page="import"><i class="fas fa-truck-loading"></i> Phiếu nhập</a></li>
-              <li><a href="#" data-page="export"><i class="fas fa-truck"></i> Phiếu xuất</a></li>
-            </ul>
-          </li>
-
-          <!-- Quản lý Bán hàng -->
-          <li class="nav-item">
-            <a href="#" class="has-submenu" data-submenu="sales">
-              <i class="fas fa-shopping-cart"></i>
-              <span>Bán hàng</span>
-              <i class="fas fa-chevron-down arrow"></i>
-            </a>
-            <ul class="submenu" id="sales">
-              <li><a href="#" data-page="pos"><i class="fas fa-cash-register"></i> Bán hàng</a></li>
-              <li><a href="#" data-page="invoices"><i class="fas fa-file-invoice"></i> Hóa đơn</a></li>
-              <li><a href="#" data-page="print-invoice"><i class="fas fa-print"></i> In hóa đơn</a></li>
-            </ul>
-          </li>
-
-          <!-- Quản lý Khách hàng -->
-          <li class="nav-item">
-            <a href="#" class="has-submenu" data-submenu="customers">
-              <i class="fas fa-users"></i>
-              <span>Khách hàng</span>
-              <i class="fas fa-chevron-down arrow"></i>
-            </a>
-            <ul class="submenu" id="customers">
-              <li><a href="#" data-page="customer-list"><i class="fas fa-list"></i> Danh sách khách hàng</a></li>
-              <li><a href="#" data-page="customer-points"><i class="fas fa-star"></i> Tích điểm</a></li>
-              <li><a href="#" data-page="customer-history"><i class="fas fa-history"></i> Lịch sử mua hàng</a></li>
-            </ul>
-          </li>
-
-          <!-- Báo cáo thống kê -->
-          <li class="nav-item">
-            <a href="#" class="has-submenu" data-submenu="reports">
-              <i class="fas fa-chart-line"></i>
-              <span>Báo cáo</span>
-              <i class="fas fa-chevron-down arrow"></i>
-            </a>
-            <ul class="submenu" id="reports">
-              <li><a href="#" data-page="report-sales"><i class="fas fa-chart-bar"></i> Báo cáo doanh thu</a></li>
-              <li><a href="#" data-page="report-inventory"><i class="fas fa-chart-pie"></i> Báo cáo tồn kho</a></li>
-              <li><a href="#" data-page="report-customer"><i class="fas fa-user-chart"></i> Báo cáo khách hàng</a></li>
-            </ul>
-          </li>
-
-          <!-- Quản lý Người dùng (Admin only) -->
-          <li class="nav-item admin-only">
-            <a href="#" data-page="users">
-              <i class="fas fa-user-cog"></i>
-              <span>Quản lý người dùng</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="user-info">
-          <div class="user-avatar">
-            <i class="fas fa-user-circle"></i>
-          </div>
-          <div class="user-details">
-            <span class="user-name" id="userName">Admin</span>
-            <span class="user-role" id="userRole">Quản trị viên</span>
-          </div>
-        </div>
-        <button class="logout-btn" id="logoutBtn">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Đăng xuất</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content" id="mainContent">
-      <!-- Header -->
-      <header class="top-header">
-        <div class="header-left">
-          <button class="mobile-toggle" id="mobileToggle">
-            <i class="fas fa-bars"></i>
+      <div class="header-right">
+        <div class="header-item">
+          <button class="notification-btn">
+            <i class="fas fa-bell"></i>
+            <span class="badge">3</span>
           </button>
-          <h1 id="pageTitle">Dashboard</h1>
         </div>
-        <div class="header-right">
-          <div class="header-item">
-            <button class="notification-btn">
-              <i class="fas fa-bell"></i>
-              <span class="badge">3</span>
-            </button>
+        <div class="header-item">
+          <span class="datetime" id="currentDateTime"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-area" id="contentArea">
+      <!-- Dashboard Home -->
+      <section class="dashboard-home">
+        <!--option for trackGeneralDashboard-->
+        <div data-role="track-dashboard">
+          <button type="button" data-role="btn-rebuild">Rebuild</button>
+
+          <select data-role="select-period">
+            <option value="">-- Chọn kỳ --</option>
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+
+          <input type="text" data-role="input-day" placeholder="Nhập theo ngày" hidden />
+
+          <input type="text" data-role="input-week" placeholder="Nhập theo tuần" hidden />
+          <input type="text" data-role="input-year" placeholder="Nhập theo năm" hidden />
+
+          <input type="text" data-role="input-month" placeholder="Nhập theo tháng" hidden />
+        </div>
+        <div class="stats-grid">
+          <!-- Doanh thu -->
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-details">
+              <h3>Doanh thu hôm nay</h3>
+              <p class="stat-value" id="todayRevenue">0 đ</p>
+              <span class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> +12.5%
+              </span>
+            </div>
           </div>
-          <div class="header-item">
-            <span class="datetime" id="currentDateTime"></span>
+
+          <!-- Đơn hàng -->
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div class="stat-details">
+              <h3>Đơn hàng hôm nay</h3>
+              <p class="stat-value" id="todayOrders">0</p>
+              <span class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> +8.2%
+              </span>
+            </div>
+          </div>
+
+          <!-- Sản phẩm -->
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-details">
+              <h3>Tổng sản phẩm</h3>
+              <p class="stat-value" id="totalProducts">0</p>
+              <span class="stat-change neutral">
+                <i class="fas fa-minus"></i> 0%
+              </span>
+            </div>
+          </div>
+
+          <!-- Khách hàng -->
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-details">
+              <h3>Khách hàng</h3>
+              <p class="stat-value" id="totalCustomers">0</p>
+              <span class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> +5.3%
+              </span>
+            </div>
           </div>
         </div>
-      </header>
 
-      <!-- Content Area -->
-      <div class="content-area" id="contentArea">
-        <!-- Dashboard Home -->
-        <section class="dashboard-home">
-          <div class="stats-grid">
-            <!-- Doanh thu -->
-            <div class="stat-card">
-              <div class="stat-icon blue">
-                <i class="fas fa-dollar-sign"></i>
-              </div>
-              <div class="stat-details">
-                <h3>Doanh thu hôm nay</h3>
-                <p class="stat-value" id="todayRevenue">0 đ</p>
-                <span class="stat-change positive">
-                  <i class="fas fa-arrow-up"></i> +12.5%
-                </span>
-              </div>
+        <!-- Charts and Tables -->
+        <div class="dashboard-grid">
+          <!-- Recent Sales Chart -->
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3><i class="fas fa-chart-line"></i> Doanh thu 7 ngày gần đây</h3>
+              <button class="btn-small">Xem chi tiết</button>
             </div>
-
-            <!-- Đơn hàng -->
-            <div class="stat-card">
-              <div class="stat-icon green">
-                <i class="fas fa-shopping-bag"></i>
-              </div>
-              <div class="stat-details">
-                <h3>Đơn hàng hôm nay</h3>
-                <p class="stat-value" id="todayOrders">0</p>
-                <span class="stat-change positive">
-                  <i class="fas fa-arrow-up"></i> +8.2%
-                </span>
-              </div>
-            </div>
-
-            <!-- Sản phẩm -->
-            <div class="stat-card">
-              <div class="stat-icon orange">
-                <i class="fas fa-box"></i>
-              </div>
-              <div class="stat-details">
-                <h3>Tổng sản phẩm</h3>
-                <p class="stat-value" id="totalProducts">0</p>
-                <span class="stat-change neutral">
-                  <i class="fas fa-minus"></i> 0%
-                </span>
-              </div>
-            </div>
-
-            <!-- Khách hàng -->
-            <div class="stat-card">
-              <div class="stat-icon purple">
-                <i class="fas fa-users"></i>
-              </div>
-              <div class="stat-details">
-                <h3>Khách hàng</h3>
-                <p class="stat-value" id="totalCustomers">0</p>
-                <span class="stat-change positive">
-                  <i class="fas fa-arrow-up"></i> +5.3%
-                </span>
-              </div>
+            <div class="card-body">
+              <canvas id="salesChart"></canvas>
             </div>
           </div>
 
-          <!-- Charts and Tables -->
-          <div class="dashboard-grid">
-            <!-- Recent Sales Chart -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3><i class="fas fa-chart-line"></i> Doanh thu 7 ngày gần đây</h3>
-                <button class="btn-small">Xem chi tiết</button>
-              </div>
-              <div class="card-body">
-                <canvas id="salesChart"></canvas>
-              </div>
+          <!-- Recent Orders -->
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3><i class="fas fa-receipt"></i> Đơn hàng gần đây</h3>
+              <button class="btn-small">Xem tất cả</button>
             </div>
-
-            <!-- Recent Orders -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3><i class="fas fa-receipt"></i> Đơn hàng gần đây</h3>
-                <button class="btn-small">Xem tất cả</button>
-              </div>
-              <div class="card-body">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Mã HD</th>
-                      <th>Khách hàng</th>
-                      <th>Tổng tiền</th>
-                      <th>Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentOrdersTable">
-                    <tr>
-                      <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã HD</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="recentOrdersTable">
+                  <tr>
+                    <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            <!-- Low Stock Alert -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3><i class="fas fa-exclamation-triangle"></i> Cảnh báo tồn kho</h3>
-                <button class="btn-small">Xem tất cả</button>
-              </div>
-              <div class="card-body">
-                <div class="alert-list" id="lowStockAlerts">
-                  <div class="alert-item">
-                    <i class="fas fa-box text-danger"></i>
-                    <div>
-                      <p class="alert-title">Đang tải dữ liệu...</p>
-                    </div>
+          <!-- Low Stock Alert -->
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3><i class="fas fa-exclamation-triangle"></i> Cảnh báo tồn kho</h3>
+              <button class="btn-small">Xem tất cả</button>
+            </div>
+            <div class="card-body">
+              <div class="alert-list" id="lowStockAlerts">
+                <div class="alert-item">
+                  <i class="fas fa-box text-danger"></i>
+                  <div>
+                    <p class="alert-title">Đang tải dữ liệu...</p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Top Products -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3><i class="fas fa-star"></i> Sản phẩm bán chạy</h3>
-                <button class="btn-small">Xem tất cả</button>
-              </div>
-              <div class="card-body">
-                <div class="product-list" id="topProducts">
-                  <div class="text-center">Đang tải dữ liệu...</div>
-                </div>
+          <!-- Top Products -->
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3><i class="fas fa-star"></i> Sản phẩm bán chạy</h3>
+              <button class="btn-small">Xem tất cả</button>
+            </div>
+            <div class="card-body">
+              <div class="product-list" id="topProducts">
+                <div class="text-center">Đang tải dữ liệu...</div>
               </div>
             </div>
           </div>
-        </section>
-      </div>
-    </main>
+        </div>
+      </section>
+    </div>
+  </main>
 
-    <script type="module" src="../script/Dashboard.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </body>
+  <script type="module" src="../script/Dashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+
 </html>
-
