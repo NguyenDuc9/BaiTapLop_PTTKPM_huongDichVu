@@ -9,6 +9,7 @@ const hasSubmenuItems = document.querySelectorAll('.has-submenu');
 const logoutBtn = document.getElementById('logoutBtn');
 const pageTitle = document.getElementById('pageTitle');
 const currentDateTime = document.getElementById('currentDateTime');
+const contentArea = document.getElementById('contentArea');
 
 // ===== STATE MANAGEMENT =====
 let currentUser = {
@@ -77,6 +78,17 @@ function setupEventListeners() {
     });
   });
 
+  if (contentArea) {
+    contentArea.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-page]');
+      if (!target) return;
+      const page = target.getAttribute('data-page');
+      if (!page) return;
+      e.preventDefault();
+      navigateToPage(page);
+    });
+  }
+
   // Submenu toggle
   hasSubmenuItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -118,9 +130,6 @@ function setupEventListeners() {
 function navigateToPage(page) {
   console.log(`Navigating to: ${page}`);
   pageTitle.textContent = getPageTitle(page);
-  
-  // Here you would load the appropriate content
-  // For now, we'll just log it
   loadPageContent(page);
 }
 
@@ -148,9 +157,39 @@ function getPageTitle(page) {
 }
 
 function loadPageContent(page) {
-  // This would load different content based on the page
-  // For now, we'll keep the dashboard visible
-  console.log(`Loading content for: ${page}`);
+  const sections = document.querySelectorAll('[data-section]');
+  if (!sections.length) {
+    return;
+  }
+
+  let hasSection = false;
+  sections.forEach(section => {
+    const sectionPage = section.getAttribute('data-page');
+    if (sectionPage === page) {
+      hasSection = true;
+    }
+  });
+
+  if (!hasSection) {
+    if (page === 'dashboard') {
+      loadDashboardData();
+    }
+    return;
+  }
+
+  sections.forEach(section => {
+    const sectionPage = section.getAttribute('data-page');
+    const display = section.getAttribute('data-display') || 'block';
+    if (sectionPage === page) {
+      section.style.display = display;
+    } else {
+      section.style.display = 'none';
+    }
+  });
+
+  if (page === 'dashboard') {
+    loadDashboardData();
+  }
 }
 
 // ===== USER MANAGEMENT =====

@@ -70,20 +70,37 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
       message.style.color = "green";
       message.textContent = "Đăng nhập thành công!";
-      
-      // Lưu thông tin user và token
+
       if (data.token) {
         localStorage.setItem('authToken', data.token);
       }
-      if (data.user) {
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      const user = data.user || {
+        id: data.userId,
+        username: data.userName,
+        fullName: data.fullName,
+        roleId: data.roleId,
+        name: data.fullName || data.userName,
+        role: data.roleName || (data.roleId === 7 ? 'Thu ngân' : 'Người dùng'),
+        isAdmin: data.roleId === 1
+      };
+
+      if (user) {
+        localStorage.setItem('currentUser', JSON.stringify(user));
       }
       
       console.log('Login success:', data);
-      
-      // Redirect đến Dashboard sau 1 giây
+
+      const isCashier =
+        (user.role && user.role.toLowerCase().includes('thu ngân')) ||
+        user.roleId === 7;
+
+      const redirectUrl = isCashier
+        ? '../pages/POS.html'
+        : '../pages/Dashboard.html';
+
       setTimeout(() => {
-        window.location.href = '../pages/Dashboard.html';
+        window.location.href = redirectUrl;
       }, 1000);
     })
     .catch(error => {

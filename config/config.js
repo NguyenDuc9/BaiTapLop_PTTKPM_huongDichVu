@@ -1,5 +1,5 @@
 const config = {
-  API_URL: "https://localhost:7195",
+  API_URL: "https://localhost:7158",
   
   endpoints: {
     // Authentication
@@ -16,16 +16,16 @@ const config = {
     // Products (Quản lý Sản phẩm)
     PRODUCTS: "/api/products",
     PRODUCT_BY_ID: "/api/products/:id",
-    PRODUCT_CREATE: "/api/products/create",
-    PRODUCT_UPDATE: "/api/products/update/:id",
-    PRODUCT_DELETE: "/api/products/delete/:id",
+    PRODUCT_CREATE: "/api/products",
+    PRODUCT_UPDATE: "/api/products/:id",
+    PRODUCT_DELETE: "/api/products/:id",
     
     // Categories (Danh mục sản phẩm)
-    CATEGORIES: "/api/categories",
-    CATEGORY_BY_ID: "/api/categories/:id",
-    CATEGORY_CREATE: "/api/categories/create",
-    CATEGORY_UPDATE: "/api/categories/update/:id",
-    CATEGORY_DELETE: "/api/categories/delete/:id",
+    CATEGORIES: "/api/category",
+    CATEGORY_BY_ID: "/api/category/:id",
+    CATEGORY_CREATE: "/api/category",
+    CATEGORY_UPDATE: "/api/category/:id",
+    CATEGORY_DELETE: "/api/category/:id",
     
     // Warehouse (Quản lý Kho)
     INVENTORY: "/api/warehouse/inventory",
@@ -35,9 +35,9 @@ const config = {
     INVENTORY_UPDATE: "/api/warehouse/update-stock",
     
     // Sales (Bán hàng)
-    INVOICES: "/api/sales/invoices",
-    INVOICE_BY_ID: "/api/sales/invoices/:id",
-    CREATE_INVOICE: "/api/sales/create-invoice",
+    INVOICES: "/api/sales",
+    INVOICE_BY_ID: "/api/sales/:id",
+    CREATE_INVOICE: "/api/sales",
     PRINT_INVOICE: "/api/sales/print-invoice/:id",
     CALCULATE_TOTAL: "/api/sales/calculate-total",
     PAYMENT: "/api/sales/payment",
@@ -64,6 +64,14 @@ const config = {
     USER_CREATE: "/api/users/create",
     USER_UPDATE: "/api/users/update/:id",
     USER_DELETE: "/api/users/delete/:id",
+
+    // Promotions
+    PROMOTIONS: "/api/promotions",
+    PROMOTION_BY_ID: "/api/promotions/:id",
+
+    // Taxes
+    TAXES: "/api/taxes",
+    TAX_BY_ID: "/api/taxes/:id",
   },
   
   // Helper function để lấy full URL
