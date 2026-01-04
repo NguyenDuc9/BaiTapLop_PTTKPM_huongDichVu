@@ -18,10 +18,35 @@ let currentUser = {
   isAdmin: true
 };
 
+let productList = [];
+let productFilters = {
+  q: '',
+  category: '',
+  status: ''
+};
+
+let categories = [];
+
+let inventoryItems = [];
+let inventoryFilters = {
+  q: '',
+  status: ''
+};
+
+let taxesData = [];
+let taxFilters = {
+  q: '',
+  isActive: ''
+};
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
   loadDashboardData();
+  initProductListPage();
+  initCategoryPage();
+  initInventoryPage();
+  initTaxesPage();
   updateDateTime();
   setInterval(updateDateTime, 1000);
 });
@@ -139,6 +164,7 @@ function getPageTitle(page) {
     'product-list': 'Danh sách sản phẩm',
     'product-add': 'Thêm sản phẩm',
     'category': 'Danh mục sản phẩm',
+    'taxes': 'Quản lý thuế',
     'inventory': 'Quản lý tồn kho',
     'import': 'Phiếu nhập hàng',
     'export': 'Phiếu xuất hàng',
@@ -153,6 +179,7 @@ function getPageTitle(page) {
     'report-customer': 'Báo cáo khách hàng',
     'users': 'Quản lý người dùng'
   };
+  
   return titles[page] || 'Dashboard';
 }
 
@@ -521,6 +548,750 @@ function renderSalesChart(ctx, data) {
       }
     }
   });
+}
+
+function initProductListPage() {
+  const searchInput = document.getElementById('productSearchInput');
+  const categorySelect = document.getElementById('productCategoryFilter');
+  const statusSelect = document.getElementById('productStatusFilter');
+  const tbody = document.getElementById('productTableBody');
+  if (!searchInput || !categorySelect || !statusSelect || !tbody) {
+    return;
+  }
+  searchInput.addEventListener('input', () => {
+    productFilters.q = searchInput.value.trim();
+    renderProductRows();
+  });
+  categorySelect.addEventListener('change', () => {
+    productFilters.category = categorySelect.value;
+    renderProductRows();
+  });
+  statusSelect.addEventListener('change', () => {
+    productFilters.status = statusSelect.value;
+    renderProductRows();
+  });
+  tbody.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) {
+      return;
+    }
+    const row = button.closest('tr');
+    if (!row) {
+      return;
+    }
+  });
+  loadCategories();
+  loadProductsForAdmin();
+}
+
+async function loadProductsForAdmin() {
+  const tbody = document.getElementById('productTableBody');
+  if (!tbody) {
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center">Đang tải dữ liệu sản phẩm...</td></tr>';
+  try {
+    const url = config.getUrl(config.endpoints.PRODUCTS);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to load products');
+    }
+    const data = await response.json();
+    productList = Array.isArray(data) ? data : [];
+    renderProductRows();
+  } catch (error) {
+    console.error('Error loading products:', error);
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không thể tải dữ liệu sản phẩm</td></tr>';
+  }
+}
+
+function renderProductRows() {
+  const tbody = document.getElementById('productTableBody');
+  if (!tbody) {
+    return;
+  }
+  if (!Array.isArray(productList) || productList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không có dữ liệu sản phẩm</td></tr>';
+    return;
+  }
+  let items = productList.slice();
+  if (productFilters.q) {
+    const q = productFilters.q.toLowerCase();
+    items = items.filter(item => {
+      const code = item.productCode || item.code || '';
+      const name = item.productName || item.name || '';
+      return code.toLowerCase().includes(q) || name.toLowerCase().includes(q);
+    });
+  }
+  if (productFilters.category) {
+    const categoryValue = productFilters.category;
+    items = items.filter(item => {
+      const categoryName = item.categoryName || item.category || '';
+      return String(categoryName).toLowerCase() === String(categoryValue).toLowerCase();
+    });
+  }
+  if (productFilters.status) {
+    items = items.filter(item => {
+      const status = getProductStatus(item);
+      if (productFilters.status === 'low-stock') {
+        return status === 'low' || status === 'out';
+      }
+      return status === productFilters.status;
+    });
+  }
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không có sản phẩm phù hợp</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(item => {
+    const code = item.productCode || item.code || '';
+    const name = item.productName || item.name || '';
+    const categoryName = item.categoryName || item.category || '';
+    const price = item.sellingPrice != null ? item.sellingPrice : item.price != null ? item.price : 0;
+    const stock = item.stockQuantity != null ? item.stockQuantity : item.stock != null ? item.stock : 0;
+    const minStock = item.minStock != null ? item.minStock : 0;
+    const status = getProductStatus(item);
+    const statusText = getProductStatusText(status);
+    const statusClass = getProductStatusClass(status);
+    return `
+      <tr>
+        <td><strong>${code}</strong></td>
+        <td>${name}</td>
+        <td><span class="tag-badge">${categoryName}</span></td>
+        <td>${formatCurrency(price)}</td>
+        <td>${stock}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn-link">Sửa</button>
+          <button class="btn-link danger">Xóa</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getProductStatus(item) {
+  const isActive = item.isActive !== false;
+  const stock = item.stockQuantity != null ? item.stockQuantity : item.stock != null ? item.stock : 0;
+  const minStock = item.minStock != null ? item.minStock : 0;
+  if (!isActive) {
+    return 'inactive';
+  }
+  if (stock <= 0) {
+    return 'out';
+  }
+  if (minStock && stock < minStock) {
+    return 'low';
+  }
+  return 'active';
+}
+
+function getProductStatusText(status) {
+  if (status === 'inactive') {
+    return 'Ngừng bán';
+  }
+  if (status === 'out') {
+    return 'Hết hàng';
+  }
+  if (status === 'low') {
+    return 'Sắp hết hàng';
+  }
+  return 'Đang bán';
+}
+
+function getProductStatusClass(status) {
+  if (status === 'inactive') {
+    return 'danger';
+  }
+  if (status === 'out') {
+    return 'danger';
+  }
+  if (status === 'low') {
+    return 'warning';
+  }
+  return 'success';
+}
+
+function initCategoryPage() {
+  const nameInput = document.getElementById('categoryName');
+  const codeInput = document.getElementById('categoryCode');
+  const addBtn = document.querySelector('[data-page="category"] .btn-primary.full-width');
+  const tbody = document.getElementById('categoryTableBody');
+  if (!nameInput || !codeInput || !addBtn || !tbody) {
+    return;
+  }
+  addBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const code = codeInput.value.trim();
+    if (!name || !code) {
+      alert('Vui lòng nhập đầy đủ mã và tên danh mục');
+      return;
+    }
+    await createCategory(code, name);
+  });
+  tbody.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) {
+      return;
+    }
+    const id = button.getAttribute('data-id');
+    const action = button.classList.contains('danger') ? 'delete' : 'edit';
+    if (!id) {
+      return;
+    }
+    if (action === 'edit') {
+      handleEditCategory(id);
+    } else {
+      handleDeleteCategory(id);
+    }
+  });
+  loadCategories();
+}
+
+async function loadCategories() {
+  try {
+    const response = await fetch(config.getUrl(config.endpoints.CATEGORIES), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to load categories');
+    }
+    const data = await response.json();
+    categories = Array.isArray(data) ? data : [];
+    renderCategoryRows();
+    populateProductCategoryFilter();
+    populateProductCategorySelect();
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    const tbody = document.getElementById('categoryTableBody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center">Không thể tải dữ liệu danh mục</td></tr>';
+    }
+  }
+}
+
+function renderCategoryRows() {
+  const tbody = document.getElementById('categoryTableBody');
+  if (!tbody) {
+    return;
+  }
+  if (!Array.isArray(categories) || categories.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Không có dữ liệu danh mục</td></tr>';
+    return;
+  }
+  tbody.innerHTML = categories.map(cat => {
+    const id = cat.categoryId != null ? cat.categoryId : cat.id;
+    const code = cat.categoryCode || cat.code || '';
+    const name = cat.categoryName || cat.name || '';
+    const productCount = cat.productCount != null ? cat.productCount : '';
+    const isActive = cat.isActive !== false;
+    const statusText = isActive ? 'Hoạt động' : 'Ngừng hoạt động';
+    const statusClass = isActive ? 'success' : 'danger';
+    return `
+      <tr>
+        <td><strong>${code}</strong></td>
+        <td>${name}</td>
+        <td>${productCount}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn-link" data-id="${id}">Sửa</button>
+          <button class="btn-link danger" data-id="${id}">Xóa</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function populateProductCategoryFilter() {
+  const select = document.getElementById('productCategoryFilter');
+  if (!select) {
+    return;
+  }
+  const current = select.value;
+  const options = ['<option value="">Tất cả</option>'].concat(
+    categories.map(cat => {
+      const name = cat.categoryName || cat.name || cat.categoryCode || '';
+      return `<option value="${name}">${name}</option>`;
+    })
+  );
+  select.innerHTML = options.join('');
+  if (current) {
+    select.value = current;
+  }
+}
+
+function populateProductCategorySelect() {
+  const select = document.getElementById('productCategory');
+  if (!select) {
+    return;
+  }
+  const current = select.value;
+  const options = ['<option value="">Chọn danh mục</option>'].concat(
+    categories.map(cat => {
+      const name = cat.categoryName || cat.name || cat.categoryCode || '';
+      return `<option value="${name}">${name}</option>`;
+    })
+  );
+  select.innerHTML = options.join('');
+  if (current) {
+    select.value = current;
+  }
+}
+
+async function createCategory(code, name) {
+  try {
+    const payload = {
+      categoryCode: code,
+      categoryName: name,
+      isActive: true
+    };
+    const response = await fetch(config.getUrl(config.endpoints.CATEGORY_CREATE), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error('Failed to create category');
+    }
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryCode').value = '';
+    await loadCategories();
+  } catch (error) {
+    console.error('Error creating category:', error);
+    alert('Không thể tạo danh mục mới');
+  }
+}
+
+async function handleEditCategory(id) {
+  const cat = categories.find(item => {
+    const catId = item.categoryId != null ? item.categoryId : item.id;
+    return String(catId) === String(id);
+  });
+  if (!cat) {
+    return;
+  }
+  const currentCode = cat.categoryCode || cat.code || '';
+  const currentName = cat.categoryName || cat.name || '';
+  const currentActive = cat.isActive !== false;
+  const code = prompt('Cập nhật mã danh mục', currentCode);
+  if (!code) {
+    return;
+  }
+  const name = prompt('Cập nhật tên danh mục', currentName);
+  if (!name) {
+    return;
+  }
+  const isActive = confirm(currentActive ? 'Giữ trạng thái hoạt động cho danh mục này?' : 'Kích hoạt danh mục này?');
+  const payload = {
+    categoryCode: code.trim(),
+    categoryName: name.trim(),
+    isActive
+  };
+  try {
+    const url = config.getUrl(config.endpoints.CATEGORY_UPDATE, { id });
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update category');
+    }
+    await loadCategories();
+  } catch (error) {
+    console.error('Error updating category:', error);
+    alert('Không thể cập nhật danh mục');
+  }
+}
+
+async function handleDeleteCategory(id) {
+  if (!confirm('Bạn có chắc muốn xóa danh mục này?')) {
+    return;
+  }
+  try {
+    const url = config.getUrl(config.endpoints.CATEGORY_DELETE, { id });
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete category');
+    }
+    await loadCategories();
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    alert('Không thể xóa danh mục');
+  }
+}
+
+function initInventoryPage() {
+  const searchInput = document.getElementById('inventorySearch');
+  const statusSelect = document.getElementById('inventoryStatusFilter');
+  const tbody = document.getElementById('inventoryTableBody');
+  if (!searchInput || !statusSelect || !tbody) {
+    return;
+  }
+  searchInput.addEventListener('input', () => {
+    inventoryFilters.q = searchInput.value.trim();
+    loadInventory();
+  });
+  statusSelect.addEventListener('change', () => {
+    inventoryFilters.status = statusSelect.value;
+    renderInventoryRows();
+  });
+  loadInventory();
+}
+
+async function loadInventory() {
+  const tbody = document.getElementById('inventoryTableBody');
+  if (!tbody) {
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu tồn kho...</td></tr>';
+  try {
+    const params = {};
+    if (inventoryFilters.q) {
+      params.q = inventoryFilters.q;
+    }
+    const url = config.buildUrlWithQuery(config.endpoints.INVENTORY, params);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to load inventory');
+    }
+    const data = await response.json();
+    inventoryItems = Array.isArray(data) ? data : [];
+    renderInventoryRows();
+  } catch (error) {
+    console.error('Error loading inventory:', error);
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không thể tải dữ liệu tồn kho</td></tr>';
+  }
+}
+
+function renderInventoryRows() {
+  const tbody = document.getElementById('inventoryTableBody');
+  if (!tbody) {
+    return;
+  }
+  if (!Array.isArray(inventoryItems) || inventoryItems.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có dữ liệu tồn kho</td></tr>';
+    return;
+  }
+  let items = inventoryItems.slice();
+  if (inventoryFilters.status) {
+    items = items.filter(item => getInventoryStatus(item) === inventoryFilters.status);
+  }
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có dữ liệu tồn kho phù hợp</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(item => {
+    const code = item.productCode || item.code || '';
+    const name = item.productName || item.name || '';
+    const warehouse = item.warehouseName || item.warehouse || 'Kho chính';
+    const quantity = item.currentStock != null
+      ? item.currentStock
+      : item.stockQuantity != null
+        ? item.stockQuantity
+        : item.quantity != null
+          ? item.quantity
+          : 0;
+    const minStock = item.minStock != null ? item.minStock : 0;
+    const status = getInventoryStatus(item);
+    const statusLabel = getInventoryStatusLabel(status);
+    const statusClass = getInventoryStatusClass(status);
+    return `
+      <tr>
+        <td><strong>${code}</strong></td>
+        <td>${name}</td>
+        <td>${warehouse}</td>
+        <td>${quantity}</td>
+        <td>${minStock}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getInventoryStatus(item) {
+  const quantity = item.currentStock != null
+    ? item.currentStock
+    : item.stockQuantity != null
+      ? item.stockQuantity
+      : item.quantity != null
+        ? item.quantity
+        : 0;
+  const minStock = item.minStock != null ? item.minStock : 0;
+  if (quantity <= 0) {
+    return 'out';
+  }
+  if (minStock && quantity < minStock) {
+    return 'low';
+  }
+  return 'normal';
+}
+
+function getInventoryStatusLabel(status) {
+  if (status === 'out') {
+    return 'Hết hàng';
+  }
+  if (status === 'low') {
+    return 'Sắp hết';
+  }
+  return 'Đủ hàng';
+}
+
+function getInventoryStatusClass(status) {
+  if (status === 'out') {
+    return 'danger';
+  }
+  if (status === 'low') {
+    return 'warning';
+  }
+  return 'success';
+}
+
+function initTaxesPage() {
+  const searchInput = document.getElementById('taxSearch');
+  const statusSelect = document.getElementById('taxStatusFilter');
+  const addBtn = document.getElementById('btnAddTax');
+  const tbody = document.getElementById('taxesTableBody');
+  if (!searchInput || !statusSelect || !addBtn || !tbody) {
+    return;
+  }
+  searchInput.addEventListener('input', () => {
+    taxFilters.q = searchInput.value.trim();
+    loadTaxes();
+  });
+  statusSelect.addEventListener('change', () => {
+    taxFilters.isActive = statusSelect.value;
+    loadTaxes();
+  });
+  addBtn.addEventListener('click', handleAddTax);
+  tbody.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) {
+      return;
+    }
+    const id = button.getAttribute('data-id');
+    const action = button.getAttribute('data-action');
+    if (!id || !action) {
+      return;
+    }
+    if (action === 'edit') {
+      handleEditTax(id);
+    } else if (action === 'delete') {
+      handleDeleteTax(id);
+    }
+  });
+  loadTaxes();
+}
+
+async function loadTaxes() {
+  const tbody = document.getElementById('taxesTableBody');
+  if (!tbody) {
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center">Đang tải dữ liệu thuế...</td></tr>';
+  try {
+    const params = {};
+    if (taxFilters.q) {
+      params.q = taxFilters.q;
+    }
+    if (taxFilters.isActive === 'true' || taxFilters.isActive === 'false') {
+      params.isActive = taxFilters.isActive;
+    }
+    const url = config.buildUrlWithQuery(config.endpoints.TAXES, params);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to load taxes');
+    }
+    const data = await response.json();
+    taxesData = Array.isArray(data) ? data : [];
+    renderTaxes(taxesData);
+  } catch (error) {
+    console.error('Error loading taxes:', error);
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Không thể tải dữ liệu thuế</td></tr>';
+  }
+}
+
+function renderTaxes(list) {
+  const tbody = document.getElementById('taxesTableBody');
+  if (!tbody) {
+    return;
+  }
+  if (!Array.isArray(list) || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Không có dữ liệu thuế</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(tax => {
+    const id = tax.taxId != null ? tax.taxId : tax.id;
+    const code = tax.taxCode || tax.code || '';
+    const name = tax.taxName || tax.name || '';
+    const rate = tax.taxRate != null ? tax.taxRate : tax.rate != null ? tax.rate : 0;
+    const isActive = tax.isActive !== false;
+    const statusText = isActive ? 'Hoạt động' : 'Ngừng hoạt động';
+    const statusClass = isActive ? 'success' : 'danger';
+    return `
+      <tr>
+        <td><strong>${code}</strong></td>
+        <td>${name}</td>
+        <td>${rate}%</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn-link" data-action="edit" data-id="${id}">Sửa</button>
+          <button class="btn-link danger" data-action="delete" data-id="${id}">Xóa</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function handleAddTax() {
+  const code = prompt('Nhập mã thuế');
+  if (!code) {
+    return;
+  }
+  const name = prompt('Nhập tên thuế');
+  if (!name) {
+    return;
+  }
+  const rateInput = prompt('Nhập thuế suất (%)');
+  const rate = parseFloat(rateInput);
+  if (isNaN(rate)) {
+    alert('Thuế suất không hợp lệ');
+    return;
+  }
+  const payload = {
+    taxCode: code.trim(),
+    taxName: name.trim(),
+    taxRate: rate,
+    isActive: true
+  };
+  try {
+    const response = await fetch(config.getUrl(config.endpoints.TAXES), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error('Failed to create tax');
+    }
+    await loadTaxes();
+  } catch (error) {
+    console.error('Error creating tax:', error);
+    alert('Không thể tạo thuế mới');
+  }
+}
+
+async function handleEditTax(id) {
+  const tax = taxesData.find(item => {
+    const taxId = item.taxId != null ? item.taxId : item.id;
+    return String(taxId) === String(id);
+  });
+  if (!tax) {
+    return;
+  }
+  const currentCode = tax.taxCode || tax.code || '';
+  const currentName = tax.taxName || tax.name || '';
+  const currentRate = tax.taxRate != null ? tax.taxRate : tax.rate != null ? tax.rate : 0;
+  const currentActive = tax.isActive !== false;
+  const code = prompt('Cập nhật mã thuế', currentCode);
+  if (!code) {
+    return;
+  }
+  const name = prompt('Cập nhật tên thuế', currentName);
+  if (!name) {
+    return;
+  }
+  const rateInput = prompt('Cập nhật thuế suất (%)', String(currentRate));
+  const rate = parseFloat(rateInput);
+  if (isNaN(rate)) {
+    alert('Thuế suất không hợp lệ');
+    return;
+  }
+  const isActive = confirm(currentActive ? 'Giữ trạng thái hoạt động cho thuế này?' : 'Kích hoạt thuế này?');
+  const payload = {
+    taxCode: code.trim(),
+    taxName: name.trim(),
+    taxRate: rate,
+    isActive
+  };
+  try {
+    const url = config.getUrl(config.endpoints.TAX_BY_ID, { id });
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update tax');
+    }
+    await loadTaxes();
+  } catch (error) {
+    console.error('Error updating tax:', error);
+    alert('Không thể cập nhật thuế');
+  }
+}
+
+async function handleDeleteTax(id) {
+  if (!confirm('Bạn có chắc muốn xóa thuế này?')) {
+    return;
+  }
+  try {
+    const url = config.getUrl(config.endpoints.TAX_BY_ID, { id });
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete tax');
+    }
+    await loadTaxes();
+  } catch (error) {
+    console.error('Error deleting tax:', error);
+    alert('Không thể xóa thuế');
+  }
 }
 
 // ===== UTILITY FUNCTIONS =====

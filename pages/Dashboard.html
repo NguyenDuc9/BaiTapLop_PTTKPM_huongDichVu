@@ -37,6 +37,7 @@
               <li><a href="#" data-page="product-list"><i class="fas fa-list"></i> Danh sách sản phẩm</a></li>
               <li><a href="#" data-page="product-add"><i class="fas fa-plus"></i> Thêm sản phẩm</a></li>
               <li><a href="#" data-page="category"><i class="fas fa-tags"></i> Danh mục sản phẩm</a></li>
+              <li><a href="#" data-page="taxes"><i class="fas fa-percent"></i> Thuế</a></li>
             </ul>
           </li>
 
@@ -318,42 +319,9 @@
                     <th style="width: 150px;">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="productTableBody">
                   <tr>
-                    <td><strong>SP001</strong></td>
-                    <td>Coca Cola 330ml</td>
-                    <td><span class="tag-badge">Đồ uống</span></td>
-                    <td>10.000 đ</td>
-                    <td>120</td>
-                    <td><span class="status-badge success">Đang bán</span></td>
-                    <td>
-                      <button class="btn-link">Sửa</button>
-                      <button class="btn-link danger">Xóa</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>SP002</strong></td>
-                    <td>Snack Oishi</td>
-                    <td><span class="tag-badge">Snack</span></td>
-                    <td>7.000 đ</td>
-                    <td>15</td>
-                    <td><span class="status-badge warning">Sắp hết hàng</span></td>
-                    <td>
-                      <button class="btn-link">Sửa</button>
-                      <button class="btn-link danger">Xóa</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>SP003</strong></td>
-                    <td>Nước suối Lavie</td>
-                    <td><span class="tag-badge">Đồ uống</span></td>
-                    <td>5.000 đ</td>
-                    <td>0</td>
-                    <td><span class="status-badge danger">Hết hàng</span></td>
-                    <td>
-                      <button class="btn-link">Sửa</button>
-                      <button class="btn-link danger">Xóa</button>
-                    </td>
+                    <td colspan="7" class="text-center">Đang tải dữ liệu sản phẩm...</td>
                   </tr>
                 </tbody>
               </table>
@@ -462,26 +430,9 @@
                       <th>Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="categoryTableBody">
                     <tr>
-                      <td><strong>BEVERAGE</strong></td>
-                      <td>Đồ uống</td>
-                      <td>45</td>
-                      <td><span class="status-badge success">Hoạt động</span></td>
-                      <td>
-                        <button class="btn-link">Sửa</button>
-                        <button class="btn-link danger">Xóa</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>SNACK</strong></td>
-                      <td>Snack</td>
-                      <td>23</td>
-                      <td><span class="status-badge success">Hoạt động</span></td>
-                      <td>
-                        <button class="btn-link">Sửa</button>
-                        <button class="btn-link danger">Xóa</button>
-                      </td>
+                      <td colspan="5" class="text-center">Đang tải dữ liệu danh mục...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -529,30 +480,56 @@
                     <th>Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="inventoryTableBody">
                   <tr>
-                    <td><strong>SP001</strong></td>
-                    <td>Coca Cola 330ml</td>
-                    <td>Kho chính</td>
-                    <td>120</td>
-                    <td>30</td>
-                    <td><span class="status-badge success">Đủ hàng</span></td>
+                    <td colspan="6" class="text-center">Đang tải dữ liệu tồn kho...</td>
                   </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page" data-page="taxes" data-section data-display="block" style="display: none;">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-percent"></i>
+                Quản lý thuế
+              </h3>
+              <button class="btn-small" id="btnAddTax">
+                <i class="fas fa-plus"></i>
+                Thêm thuế
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="taxSearch">Tìm kiếm</label>
+                  <input id="taxSearch" type="text" placeholder="Tên, mã thuế" />
+                </div>
+                <div class="filter-group">
+                  <label for="taxStatusFilter">Trạng thái</label>
+                  <select id="taxStatusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Ngừng hoạt động</option>
+                  </select>
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
                   <tr>
-                    <td><strong>SP002</strong></td>
-                    <td>Snack Oishi</td>
-                    <td>Kho chính</td>
-                    <td>15</td>
-                    <td>20</td>
-                    <td><span class="status-badge warning">Sắp hết</span></td>
+                    <th>Mã thuế</th>
+                    <th>Tên thuế</th>
+                    <th>Thuế suất</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
                   </tr>
+                </thead>
+                <tbody id="taxesTableBody">
                   <tr>
-                    <td><strong>SP003</strong></td>
-                    <td>Nước suối Lavie</td>
-                    <td>Kho chính</td>
-                    <td>0</td>
-                    <td>20</td>
-                    <td><span class="status-badge danger">Hết hàng</span></td>
+                    <td colspan="5" class="text-center">Đang tải dữ liệu thuế...</td>
                   </tr>
                 </tbody>
               </table>

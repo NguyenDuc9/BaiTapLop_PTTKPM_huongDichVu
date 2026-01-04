@@ -28,8 +28,8 @@ const config = {
     CATEGORY_DELETE: "/api/category/:id",
     
     // Warehouse (Quản lý Kho)
-    INVENTORY: "/api/warehouse/inventory",
-    INVENTORY_BY_ID: "/api/warehouse/inventory/:id",
+    INVENTORY: "/api/inventory",
+    INVENTORY_BY_ID: "/api/inventory/:id",
     IMPORT_GOODS: "/api/warehouse/import",
     EXPORT_GOODS: "/api/warehouse/export",
     INVENTORY_UPDATE: "/api/warehouse/update-stock",
