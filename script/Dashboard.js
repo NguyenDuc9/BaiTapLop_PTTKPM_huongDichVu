@@ -1,704 +1,1034 @@
 import config from '../config/config.js';
 
-// ===== DOM ELEMENTS =====
-const sidebar = document.getElementById('sidebar');
-const toggleBtn = document.getElementById('toggleSidebar');
-const mobileToggle = document.getElementById('mobileToggle');
-const navItems = document.querySelectorAll('.nav-item a');
-const hasSubmenuItems = document.querySelectorAll('.has-submenu');
-const logoutBtn = document.getElementById('logoutBtn');
-const pageTitle = document.getElementById('pageTitle');
-const currentDateTime = document.getElementById('currentDateTime');
-
-// ===== STATE MANAGEMENT =====
-let currentUser = {
-  name: 'Admin',
-  role: 'Quản trị viên',
-  isAdmin: true
+// ========================
+// CONSTANTS & CONFIG
+// ========================
+const REFRESH_INTERVAL = 300000; // 5 minutes
+const DATETIME_UPDATE_INTERVAL = 1000; // 1 second
+const PAGE_TITLES = {
+  'dashboard': 'Dashboard',
+  'product-list': 'Danh sách sản phẩm',
+  'product-add': 'Thêm sản phẩm',
+  'category': 'Danh mục sản phẩm',
+  'inventory': 'Quản lý tồn kho',
+  'import': 'Phiếu nhập hàng',
+  'export': 'Phiếu xuất hàng',
+  'pos': 'Bán hàng',
+  'invoices': 'Danh sách hóa đơn',
+  'print-invoice': 'In hóa đơn',
+  'customer-list': 'Danh sách khách hàng',
+  'customer-points': 'Tích điểm khách hàng',
+  'customer-history': 'Lịch sử mua hàng',
+  'report-sales': 'Báo cáo doanh thu',
+  'report-inventory': 'Báo cáo tồn kho',
+  'report-customer': 'Báo cáo khách hàng',
+  'users': 'Quản lý người dùng'
 };
 
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', () => {
-  hideInputTrack();
-  initializeApp();
-  loadDashboardData();
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
-});
-
-// ===== INITIALIZE APP =====
-function initializeApp() {
-  // Load user from localStorage
-  const storedUser = localStorage.getItem('currentUser');
-  if (storedUser) {
-    currentUser = JSON.parse(storedUser);
-    updateUserInfo();
-  } else {
-    // Redirect to login if no user
-    // window.location.href = '../auth/Login.html';
+// ========================
+// SALES CHART MANAGER
+// ========================
+class SalesChartManager {
+  constructor(apiService) {
+    this.api = apiService;
+    this.chart = null;
+    this.canvas = document.getElementById('salesChart');
   }
 
-  // Setup event listeners
-  setupEventListeners();
-
-  // Check admin permissions
-  toggleAdminFeatures();
-}
-
-// ===== EVENT LISTENERS =====
-function setupEventListeners() {
-  // Sidebar toggle
-  toggleBtn.addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
-    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-  });
-
-  // Mobile toggle
-  mobileToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('mobile-open');
-  });
-
-  // Navigation items
-  navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      const page = item.getAttribute('data-page');
-      if (page) {
-        e.preventDefault();
-        navigateToPage(page);
-
-        // Update active state
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        item.closest('.nav-item').classList.add('active');
-
-        // Close mobile menu
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('mobile-open');
-        }
-      }
-    });
-  });
-
-  // Submenu toggle
-  hasSubmenuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (!item.getAttribute('data-page')) {
-        e.preventDefault();
-        const submenuId = item.getAttribute('data-submenu');
-        const submenu = document.getElementById(submenuId);
-
-        // Toggle submenu
-        submenu.classList.toggle('open');
-        item.classList.toggle('active');
-
-        // Close other submenus
-        hasSubmenuItems.forEach(other => {
-          if (other !== item) {
-            const otherSubmenuId = other.getAttribute('data-submenu');
-            const otherSubmenu = document.getElementById(otherSubmenuId);
-            if (otherSubmenu) {
-              otherSubmenu.classList.remove('open');
-              other.classList.remove('active');
-            }
-          }
-        });
-      }
-    });
-  });
-
-  // Logout
-  logoutBtn.addEventListener('click', handleLogout);
-
-  // Restore sidebar state
-  const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-  if (sidebarCollapsed === 'true') {
-    sidebar.classList.add('collapsed');
+  /**
+   * Lấy dữ liệu biểu đồ từ API
+   */
+  async fetchChartData(date) {
+    try {
+      // Thêm endpoint vào config.js của bạn: REVENUE_CHART: '/revenue/chart'
+      const url = `${config.getUrl(config.endpoints.REVENUE_CHART)}?date=${encodeURIComponent(date)}`;
+      const result = await this.api.fetch(url);
+      return result;
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
   }
-}
 
-// ===== NAVIGATION =====
-function navigateToPage(page) {
-  console.log(`Navigating to: ${page}`);
-  pageTitle.textContent = getPageTitle(page);
 
-  // Here you would load the appropriate content
-  // For now, we'll just log it
-  loadPageContent(page);
-}
-
-function getPageTitle(page) {
-  const titles = {
-    'dashboard': 'Dashboard',
-    'product-list': 'Danh sách sản phẩm',
-    'product-add': 'Thêm sản phẩm',
-    'category': 'Danh mục sản phẩm',
-    'inventory': 'Quản lý tồn kho',
-    'import': 'Phiếu nhập hàng',
-    'export': 'Phiếu xuất hàng',
-    'pos': 'Bán hàng',
-    'invoices': 'Danh sách hóa đơn',
-    'print-invoice': 'In hóa đơn',
-    'customer-list': 'Danh sách khách hàng',
-    'customer-points': 'Tích điểm khách hàng',
-    'customer-history': 'Lịch sử mua hàng',
-    'report-sales': 'Báo cáo doanh thu',
-    'report-inventory': 'Báo cáo tồn kho',
-    'report-customer': 'Báo cáo khách hàng',
-    'users': 'Quản lý người dùng'
-  };
-  return titles[page] || 'Dashboard';
-}
-
-function loadPageContent(page) {
-  // This would load different content based on the page
-  // For now, we'll keep the dashboard visible
-  console.log(`Loading content for: ${page}`);
-}
-
-// ===== USER MANAGEMENT =====
-function updateUserInfo() {
-  document.getElementById('userName').textContent = currentUser.name;
-  document.getElementById('userRole').textContent = currentUser.role;
-}
-
-function toggleAdminFeatures() {
-  const adminOnlyItems = document.querySelectorAll('.admin-only');
-  if (!currentUser.isAdmin) {
-    adminOnlyItems.forEach(item => {
-      item.style.display = 'none';
-    });
+  /**
+   * Format tiền VND cho tooltip
+   */
+  formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
   }
-}
 
-function handleLogout() {
-  if (confirm('Bạn có chắc muốn đăng xuất?')) {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authToken');
-    window.location.href = '../auth/Login.html';
-  }
-}
-
-// ===== DATETIME =====
-function updateDateTime() {
-  const now = new Date();
-  const options = {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  };
-  currentDateTime.textContent = now.toLocaleDateString('vi-VN', options);
-}
-
-// ===== DASHBOARD DATA =====
-function formatYYYYMMDD(date) {
-  return new Promise((resolve, reject) => {
-    if (!(date instanceof Date) || isNaN(date)) {
-      reject(new Error('Invalid Date'));
+  /**
+   * Khởi tạo biểu đồ
+   */
+  initChart(data) {
+    if (!this.canvas) {
+      console.error('Canvas element not found');
       return;
     }
 
-    const result = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-    resolve(result);
-  });
-}
-async function loadDashboardData() {
-  try {
-    const date = await formatYYYYMMDD(new Date());
-    document
-      .querySelector('[data-role="btn-rebuild"]')
-      .addEventListener('click', reBuild);
-    await Promise.all([
-      loadStatisticsByDay(date),
-      // loadRecentOrders(),
-      // loadLowStockAlerts(),
-      // loadTopProducts(),
-      // loadSalesChart()
-    ]);
-  } catch (error) {
-    console.error('Error loading dashboard data:', error);
-    showNotification('Có lỗi khi tải dữ liệu dashboard', 'error');
-  }
-}
-
-async function loadStatisticsByDay(date) {
-  try {
-    const url = `${config.getUrl(config.endpoints.DASHBOARD_DAY)}?date=${encodeURIComponent(date)}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-
-    });
-
-    // Parse JSON trước
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Ném lỗi kèm message từ server
-      throw {
-        status: response.status,
-        message: result.message || 'Unknown server error'
-      };
+    // Hủy biểu đồ cũ nếu có
+    if (this.chart) {
+      this.chart.destroy();
     }
 
-    updateStatistics(result);
-  } catch (error) {
-    console.error('Error loading statistics:', error);
-    alert("Không thể tính được tuần trong tương lai")
-    // Use mock data for demonstration
-    // updateStatistics({
-    //   todayRevenue: 15750000,
-    //   todayOrders: 48,
-    //   totalProducts: 235,
-    //   totalCustomers: 1247
-    // });
-  }
-}
+    const chartData = data.chart;
+    const ctx = this.canvas.getContext('2d');
 
-
-async function loadStatisticsByWeek(week, year) {
-  try {
-    const url =
-      `${config.getUrl(config.endpoints.DASHBOARD_WEEK)}` +
-      `?weekNumber=${encodeURIComponent(week)}` +
-      `&year=${encodeURIComponent(year)}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
-
-    // Parse JSON trước
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Ném lỗi kèm message từ server
-      throw {
-        status: response.status,
-        message: result.message || 'Unknown server error'
-      };
-    }
-
-    updateStatistics(result);
-  } catch (error) {
-    console.error('Error loading statistics:', error);
-    alert("Không thể tính được tuần trong tương lai")
-    // Use mock data for demonstration
-    // updateStatistics({
-    //   todayRevenue: 15750000,
-    //   todayOrders: 48,
-    //   totalProducts: 235,
-    //   totalCustomers: 1247
-    // });
-  }
-}
-
-async function loadStatisticsByMonth(month) {
-  try {
-    const url = `${config.getUrl(config.endpoints.DASHBOARD_MONTH)}?monthNumber=${encodeURIComponent(month)}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
-
-    // Parse JSON trước
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Ném lỗi kèm message từ server
-      throw {
-        status: response.status,
-        message: result.message || 'Unknown server error'
-      };
-    }
-
-    updateStatistics(result);
-  } catch (error) {
-    console.error('Error loading statistics:', error);
-    alert("Không thể tính được tháng trong tương lai")
-    // Use mock data for demonstration
-    // updateStatistics({
-    //   todayRevenue: 15750000,
-    //   todayOrders: 48,
-    //   totalProducts: 235,
-    //   totalCustomers: 1247
-    // });
-  }
-}
-
-function updateStatistics(data) {
-  console.log('data', data)
-  document.getElementById('todayRevenue').textContent = formatCurrency(data.revenue);
-  document.getElementById('todayOrders').textContent = data.orderQuantity;
-  document.getElementById('totalProducts').textContent = data.totalProducts;
-  document.getElementById('totalCustomers').textContent = data.customers;
-}
-
-async function loadRecentOrders() {
-  try {
-    const response = await fetch(config.getUrl(config.endpoints.RECENT_ORDERS), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load orders');
-    }
-
-    const data = await response.json();
-    displayRecentOrders(data);
-  } catch (error) {
-    console.error('Error loading orders:', error);
-    // Use mock data
-    displayRecentOrders([
-      { id: 'HD001', customer: 'Nguyễn Văn A', total: 250000, status: 'completed' },
-      { id: 'HD002', customer: 'Trần Thị B', total: 180000, status: 'pending' },
-      { id: 'HD003', customer: 'Lê Văn C', total: 450000, status: 'completed' },
-      { id: 'HD004', customer: 'Phạm Thị D', total: 320000, status: 'processing' },
-      { id: 'HD005', customer: 'Hoàng Văn E', total: 190000, status: 'completed' }
-    ]);
-  }
-}
-
-function displayRecentOrders(orders) {
-  const tbody = document.getElementById('recentOrdersTable');
-
-  if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Không có đơn hàng nào</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = orders.map(order => `
-    <tr>
-      <td><strong>${order.id}</strong></td>
-      <td>${order.customer}</td>
-      <td>${formatCurrency(order.total)}</td>
-      <td><span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span></td>
-    </tr>
-  `).join('');
-}
-
-async function loadLowStockAlerts() {
-  try {
-    const response = await fetch(config.getUrl(config.endpoints.LOW_STOCK), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load alerts');
-    }
-
-    const data = await response.json();
-    displayLowStockAlerts(data);
-  } catch (error) {
-    console.error('Error loading alerts:', error);
-    // Use mock data
-    displayLowStockAlerts([
-      { name: 'Coca Cola 330ml', stock: 5, minStock: 20 },
-      { name: 'Bánh Oreo', stock: 3, minStock: 15 },
-      { name: 'Nước suối Lavie', stock: 8, minStock: 30 }
-    ]);
-  }
-}
-
-function displayLowStockAlerts(alerts) {
-  const container = document.getElementById('lowStockAlerts');
-
-  if (alerts.length === 0) {
-    container.innerHTML = '<div class="text-center">Không có cảnh báo tồn kho</div>';
-    return;
-  }
-
-  container.innerHTML = alerts.map(alert => `
-    <div class="alert-item">
-      <i class="fas fa-exclamation-triangle text-danger"></i>
-      <div>
-        <p class="alert-title">${alert.name}</p>
-        <small style="color: var(--text-secondary);">Còn ${alert.stock} - Tối thiểu: ${alert.minStock}</small>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function loadTopProducts() {
-  try {
-    const response = await fetch(config.getUrl(config.endpoints.TOP_PRODUCTS), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load products');
-    }
-
-    const data = await response.json();
-    displayTopProducts(data);
-  } catch (error) {
-    console.error('Error loading products:', error);
-    // Use mock data
-    displayTopProducts([
-      { name: 'Coca Cola 330ml', sold: 145, revenue: 7250000 },
-      { name: 'Pepsi 330ml', sold: 128, revenue: 6400000 },
-      { name: 'Snack Oishi', sold: 95, revenue: 2375000 },
-      { name: 'Bánh Oreo', sold: 87, revenue: 2175000 },
-      { name: 'Nước suối Lavie', sold: 76, revenue: 1520000 }
-    ]);
-  }
-}
-
-function displayTopProducts(products) {
-  const container = document.getElementById('topProducts');
-
-  if (products.length === 0) {
-    container.innerHTML = '<div class="text-center">Không có dữ liệu</div>';
-    return;
-  }
-
-  container.innerHTML = products.map((product, index) => `
-    <div class="alert-item" style="border-left-color: var(--success-color);">
-      <i class="fas fa-medal" style="color: ${getMedalColor(index)};"></i>
-      <div style="flex: 1;">
-        <p class="alert-title">${product.name}</p>
-        <small style="color: var(--text-secondary);">Đã bán: ${product.sold} - Doanh thu: ${formatCurrency(product.revenue)}</small>
-      </div>
-    </div>
-  `).join('');
-}
-
-function getMedalColor(index) {
-  const colors = ['#FFD700', '#C0C0C0', '#CD7F32', 'var(--info-color)', 'var(--secondary-color)'];
-  return colors[index] || 'var(--text-secondary)';
-}
-
-// async function loadSalesChart() {
-//   const ctx = document.getElementById('salesChart');
-//   if (!ctx) return;
-
-//   try {
-//     const response = await fetch(config.getUrl(config.endpoints.SALES_CHART), {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error('Failed to load chart data');
-//     }
-
-//     const data = await response.json();
-//     renderSalesChart(ctx, data);
-//   } catch (error) {
-//     console.error('Error loading chart:', error);
-//     // Use mock data
-//     const mockData = {
-//       labels: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-//       values: [3200000, 4100000, 3800000, 5200000, 4600000, 5800000, 6200000]
-//     };
-//     renderSalesChart(ctx, mockData);
-//   }
-// }
-
-function renderSalesChart(ctx, data) {
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.labels,
-      datasets: [{
-        label: 'Doanh thu (VNĐ)',
-        data: data.values,
-        borderColor: '#4f46e5',
-        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 5,
-        pointBackgroundColor: '#4f46e5',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverRadius: 7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          titleFont: {
-            size: 14
-          },
-          bodyFont: {
-            size: 13
-          },
-          callbacks: {
-            label: function (context) {
-              return formatCurrency(context.parsed.y);
-            }
-          }
-        }
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          label: chartData.datasets[0].label || 'Doanh thu',
+          data: chartData.datasets[0].data,
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: '#4f46e5',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+          pointHoverBackgroundColor: '#4f46e5',
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 3
+        }]
       },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: function (value) {
-              return formatCurrency(value, true);
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              font: {
+                size: 13,
+                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+              },
+              padding: 15,
+              usePointStyle: true,
+              pointStyle: 'circle'
             }
           },
-          grid: {
-            color: 'rgba(0, 0, 0, 0.05)'
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              size: 14,
+              weight: 'bold'
+            },
+            bodyFont: {
+              size: 13
+            },
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              label: (context) => {
+                return 'Doanh thu: ' + this.formatCurrency(context.parsed.y);
+              }
+            }
           }
         },
-        x: {
-          grid: {
-            display: false
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => {
+                if (value >= 1000000) {
+                  return (value / 1000000).toFixed(1) + 'M';
+                }
+                return value.toLocaleString('vi-VN');
+              },
+              font: {
+                size: 12
+              },
+              padding: 8
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              drawBorder: false
+            }
+          },
+          x: {
+            ticks: {
+              font: {
+                size: 12
+              },
+              padding: 8
+            },
+            grid: {
+              display: false
+            }
           }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
         }
       }
-    }
-  });
-}
-
-// ===== UTILITY FUNCTIONS =====
-function formatCurrency(amount, short = false) {
-  if (short && amount >= 1000000) {
-    return (amount / 1000000).toFixed(1) + 'M đ';
-  }
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(amount);
-}
-
-function getStatusClass(status) {
-  const classes = {
-    'completed': 'success',
-    'processing': 'warning',
-    'pending': 'warning',
-    'cancelled': 'danger'
-  };
-  return classes[status] || 'neutral';
-}
-
-function getStatusText(status) {
-  const texts = {
-    'completed': 'Hoàn thành',
-    'processing': 'Đang xử lý',
-    'pending': 'Chờ xử lý',
-    'cancelled': 'Đã hủy'
-  };
-  return texts[status] || status;
-}
-
-function showNotification(message, type = 'info') {
-  // Simple notification - you can enhance this with a library
-  console.log(`[${type.toUpperCase()}] ${message}`);
-  alert(message);
-}
-
-// ===== EXPORT FOR EXTERNAL USE =====
-window.dashboardApp = {
-  loadDashboardData,
-  navigateToPage,
-  currentUser
-};
-
-function hideInputTrack() {
-  const select = document.querySelector('[data-role="select-period"]');
-
-  const inputs = {
-    day: document.querySelector('[data-role="input-day"]'),
-    week: document.querySelector('[data-role="input-week"]'),
-    month: document.querySelector('[data-role="input-month"]'),
-    year: document.querySelector('[data-role="input-year"]')
-  };
-
-  function hideAll() {
-    Object.values(inputs).forEach(input => {
-      if (input) input.hidden = true;
     });
   }
 
-  select.addEventListener('change', () => {
-    hideAll();
+  /**
+   * Hiển thị loading state
+   */
+  showLoading() {
+    const cardBody = this.canvas?.parentElement;
+    if (!cardBody) return;
 
-    if (select.value === 'day') {
-      inputs.day.hidden = false;
-    }
+    cardBody.innerHTML = `
+      <div style="display: flex; justify-content: center; align-items: center; height: 300px;">
+        <div style="text-align: center;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #4f46e5;"></i>
+          <p style="margin-top: 16px; color: #6b7280; font-size: 14px;">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    `;
+  }
 
-    if (select.value === 'week') {
-      inputs.week.hidden = false;
-      inputs.year.hidden = false;
-    }
+  /**
+   * Hiển thị lỗi
+   */
+  showError(message) {
+    const cardBody = this.canvas?.parentElement;
+    if (!cardBody) return;
 
-    if (select.value === 'month') {
-      inputs.month.hidden = false;
-    }
-  });
-}
-function reBuild() {
-  try {
-    const type = document.querySelector('[data-role="select-period"]').value;
+    cardBody.innerHTML = `
+      <div style="display: flex; justify-content: center; align-items: center; height: 300px;">
+        <div style="text-align: center; color: #dc2626;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 32px;"></i>
+          <p style="margin-top: 16px; font-size: 14px;">${message}</p>
+            Thử lại
+        </div>
+      </div>
+    `;
+  }
 
-    if (!type) {
-      throw new Error('Chưa chọn loại thống kê');
-    }
-
-    if (type === 'day') {
-      const day = document.querySelector('[data-role="input-day"]').value;
-      if (!day) throw new Error('Vui lòng chọn ngày');
-      loadStatisticsByDay(day);
-
-    } else if (type === 'week') {
-      const week = document.querySelector('[data-role="input-week"]').value;
-      const year = document.querySelector('[data-role="input-year"]').value;
-
-      if (!week || !year) {
-        throw new Error('Vui lòng nhập đầy đủ tuần và năm');
+  /**
+   * Load và hiển thị biểu đồ
+   */
+  async load(date) {
+    try {
+      const formattedDate = typeof date === 'string' ? date : Utils.formatDate(date);
+      // Reset canvas
+      const cardBody = this.canvas?.parentElement;
+      if (cardBody) {
+        cardBody.innerHTML = '<canvas id="salesChart"></canvas>';
+        this.canvas = document.getElementById('salesChart');
       }
 
-      loadStatisticsByWeek(week, year);
+      // Lấy dữ liệu
+      const result = await this.fetchChartData(formattedDate);
 
-    } else if (type === 'month') {
-      const month = document.querySelector('[data-role="input-month"]').value;
-      if (!month) throw new Error('Vui lòng chọn tháng');
-      loadStatisticsByMonth(month);
+      // Kiểm tra kết quả
+      if (result.success && result.data) {
+        this.initChart(result.data);
+      } else {
+        this.showError("Vui lòng tính doanh thu ngày trước");
+        throw new Error('Không có bất kì bản ghi doanh thu nào');
+      }
 
-    } else {
-      throw new Error('Loại thống kê không hợp lệ');
+    } catch (error) {
+      console.error('Error loading chart:', error);
+      this.showError('Không thể tải biểu đồ. Vui lòng thử lại sau.');
     }
+  }
 
-  } catch (error) {
-    console.error('Lỗi rebuild thống kê:', error);
-    alert(error.message);
+  /**
+   * Reload biểu đồ
+   */
+  async reload(date) {
+    await this.load(date);
+  }
+
+  /**
+   * Destroy biểu đồ
+   */
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
   }
 }
 
+// ========================
+// STATE MANAGEMENT
+// ========================
+class AppState {
+  constructor() {
+    this.currentUser = {
+      id: 3,
+      name: 'Admin',
+      role: 'Quản trị viên',
+      isAdmin: true
+    };
+    this.currentPage = 1;
+    this.notificationPage = 1;
+  }
 
+  loadUser() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      this.currentUser = JSON.parse(storedUser);
+    }
+    return this.currentUser;
+  }
+
+  saveUser(user) {
+    this.currentUser = user;
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  }
+
+  clearUser() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+  }
+
+  getAuthToken() {
+    return localStorage.getItem('authToken');
+  }
+}
+
+// ========================
+// DOM MANAGER
+// ========================
+class DOMManager {
+  constructor() {
+    this.elements = {
+      sidebar: document.getElementById('sidebar'),
+      toggleBtn: document.getElementById('toggleSidebar'),
+      mobileToggle: document.getElementById('mobileToggle'),
+      navItems: document.querySelectorAll('.nav-item a'),
+      hasSubmenuItems: document.querySelectorAll('.has-submenu'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      pageTitle: document.getElementById('pageTitle'),
+      currentDateTime: document.getElementById('currentDateTime'),
+      notificationBtn: document.querySelector('.notification-btn'),
+      notificationDropdown: document.getElementById('notification-dropdown'),
+      notificationBadge: document.querySelector('.badge'),
+      notificationList: document.getElementById('notification-list'),
+      nextBtn: document.getElementById('nextBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      selectPeriod: document.querySelector('[data-role="select-period"]'),
+      rebuildBtn: document.querySelector('[data-role="btn-rebuild"]'),
+      inputs: {
+        day: document.querySelector('[data-role="input-day"]'),
+        week: document.querySelector('[data-role="input-week"]'),
+        month: document.querySelector('[data-role="input-month"]'),
+        year: document.querySelector('[data-role="input-year"]')
+      }
+    };
+  }
+
+  hideElement(element) {
+    if (element) element.hidden = true;
+  }
+
+  showElement(element) {
+    if (element) element.hidden = false;
+  }
+
+  updateText(elementId, text) {
+    const el = document.getElementById(elementId);
+    if (el) el.textContent = text;
+  }
+}
+
+// ========================
+// API SERVICE
+// ========================
+class APIService {
+  constructor(authToken) {
+    this.authToken = authToken;
+  }
+
+  async fetch(url, options = {}) {
+    try {
+      const defaultOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`
+        }
+      };
+
+      const response = await fetch(url, { ...defaultOptions, ...options });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw {
+          status: response.status,
+          message: result.message || 'Unknown server error'
+        };
+      }
+
+      return result;
+    } catch (error) {
+      // Nếu là lỗi network hoặc parse JSON
+      if (error instanceof TypeError) {
+        throw {
+          status: 0,
+          message: 'Lỗi kết nối mạng'
+        };
+      }
+      // Re-throw lỗi từ server
+      throw error;
+    }
+  }
+
+  async getStatisticsByDay(date) {
+    const url = `${config.getUrl(config.endpoints.DASHBOARD_DAY)}?date=${encodeURIComponent(date)}`;
+    return this.fetch(url);
+  }
+
+  async getStatisticsByWeek(week, year) {
+    const url = `${config.getUrl(config.endpoints.DASHBOARD_WEEK)}?weekNumber=${encodeURIComponent(week)}&year=${encodeURIComponent(year)}`;
+    return this.fetch(url);
+  }
+
+  async getStatisticsByMonth(month) {
+    const url = `${config.getUrl(config.endpoints.DASHBOARD_MONTH)}?monthNumber=${encodeURIComponent(month)}`;
+    return this.fetch(url);
+  }
+
+  async getNotifications(receiverID, pageNumber) {
+    const url = `${config.getUrl(config.endpoints.SELECTED_NOTIFICATIONS)}?receiverID=${encodeURIComponent(receiverID)}&pageNumber=${encodeURIComponent(pageNumber)}`;
+    return this.fetch(url);
+  }
+
+  async deleteNotification(notificationId) {
+    const url = `${config.getUrl(config.endpoints.DELETED_NOTIFICATION)}?id=${encodeURIComponent(notificationId)}`;
+    return this.fetch(url, { method: 'DELETE' });
+  }
+
+  async calculateRevenueChange(type, lastPeriod, currentPeriod, year = null) {
+    let url;
+    if (type === 'day') {
+      url = `${config.getUrl(config.endpoints.CalculateRevenueOfDay)}?type=${encodeURIComponent(type)}&lastDate=${encodeURIComponent(lastPeriod)}&currentDate=${encodeURIComponent(currentPeriod)}`;
+    } else {
+      url = `${config.getUrl(config.endpoints.CalculateRevenueOfWeekAndMonth)}?type=${encodeURIComponent(type)}&lastDate=${encodeURIComponent(lastPeriod)}&currentDate=${encodeURIComponent(currentPeriod)}&year=${encodeURIComponent(year)}`;
+    }
+    const response = await fetch(url);
+    return response.json();
+  }
+}
+
+// ========================
+// UTILITY FUNCTIONS
+// ========================
+class Utils {
+  static formatCurrency(amount, short = false) {
+    if (short && amount >= 1000000) {
+      return (amount / 1000000).toFixed(1) + 'M đ';
+    }
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  }
+
+  static formatDate(date) {
+    if (!(date instanceof Date) || isNaN(date)) {
+      throw new Error('Invalid Date');
+    }
+    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  static formatDateTime(date) {
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    };
+    return date.toLocaleDateString('vi-VN', options);
+  }
+
+  static getPreviousDate(date) {
+    const prev = new Date(date);
+    prev.setDate(prev.getDate() - 1);
+    return prev;
+  }
+}
+
+// ========================
+// UI MANAGER
+// ========================
+class UIManager {
+  constructor(domManager) {
+    this.dom = domManager;
+  }
+
+  updateStatistics(data) {
+    alert("Dữ liệu mới được cập nhập");
+    this.dom.updateText('todayRevenue', Utils.formatCurrency(data.revenue));
+    this.dom.updateText('todayOrders', data.orderQuantity);
+    this.dom.updateText('totalProducts', data.totalProducts);
+    this.dom.updateText('totalCustomers', data.customers);
+  }
+
+  updateRevenueChange(data) {
+    const changeElement = document.querySelector('.stat-change');
+    if (!changeElement) return;
+
+    // Nếu data có message (lỗi)
+    if (data && data.message) {
+      changeElement.innerHTML = data.message;
+      changeElement.className = 'stat-change';
+      return;
+    }
+
+    // Lấy giá trị: hoặc từ percentChange hoặc trực tiếp từ data
+    let value;
+    if (typeof data === 'number') {
+      value = data; // API trả về trực tiếp số
+    } else if (data && data.percentChange !== undefined) {
+      value = data.percentChange; // API trả về object
+    } else {
+      changeElement.innerHTML = '0';
+      changeElement.className = 'stat-change';
+      return;
+    }
+
+
+    // Hiển thị giá trị
+    if (value > 0) {
+      changeElement.innerHTML = `<i class="fas fa-arrow-up"></i> +${value}`;
+      changeElement.className = 'stat-change positive';
+    } else if (value < 0) {
+      changeElement.innerHTML = `<i class="fas fa-arrow-down"></i> ${"Cần tính doanh thu ngày hôm qua"}`;
+      changeElement.className = 'stat-change negative';
+    } else {
+      changeElement.innerHTML = `<i class="fas fa-minus"></i> 0`;
+      changeElement.className = 'stat-change';
+    }
+  }
+
+  updateNotifications(result) {
+    const { notificationList, notificationBadge, nextBtn, prevBtn } = this.dom.elements;
+
+    notificationList.innerHTML = '';
+
+    // Kiểm tra nếu có message lỗi hoặc không phải array
+    if (result.message || !Array.isArray(result)) {
+      notificationBadge.textContent = '0';
+      nextBtn.style.display = 'none';
+      prevBtn.style.display = 'none';
+
+      // Hiển thị thông báo lỗi trong dropdown
+      const noDataItem = document.createElement('li');
+      noDataItem.textContent = result.message || 'Không có thông báo';
+      noDataItem.style.textAlign = 'center';
+      noDataItem.style.color = 'var(--text-secondary)';
+      noDataItem.style.padding = '1rem';
+      notificationList.appendChild(noDataItem);
+      return;
+    }
+
+    // Nếu không có thông báo
+    if (result.length === 0) {
+      notificationBadge.textContent = '0';
+      const noDataItem = document.createElement('li');
+      noDataItem.textContent = 'Không có thông báo mới';
+      noDataItem.style.textAlign = 'center';
+      noDataItem.style.color = 'var(--text-secondary)';
+      noDataItem.style.padding = '1rem';
+      notificationList.appendChild(noDataItem);
+      return;
+    }
+
+    // Hiển thị số lượng thông báo
+    notificationBadge.textContent = result.length;
+
+    // Render từng thông báo
+    result.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item.content;
+      li.dataset.notificationId = item.id;
+      li.classList.add('notification-item');
+      notificationList.appendChild(li);
+    });
+  }
+
+  showError(message) {
+    console.error(message);
+    alert(message);
+  }
+
+  updateDateTime() {
+    const { currentDateTime } = this.dom.elements;
+    if (currentDateTime) {
+      currentDateTime.textContent = Utils.formatDateTime(new Date());
+    }
+  }
+
+  updatePageTitle(page) {
+    const { pageTitle } = this.dom.elements;
+    if (pageTitle) {
+      pageTitle.textContent = PAGE_TITLES[page] || 'Dashboard';
+    }
+  }
+
+  toggleSidebar() {
+    const { sidebar } = this.dom.elements;
+    sidebar.classList.toggle('collapsed');
+    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+  }
+
+  openMobileSidebar() {
+    this.dom.elements.sidebar.classList.toggle('mobile-open');
+  }
+
+  closeMobileSidebar() {
+    this.dom.elements.sidebar.classList.remove('mobile-open');
+  }
+
+  restoreSidebarState() {
+    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+    if (sidebarCollapsed === 'true') {
+      this.dom.elements.sidebar.classList.add('collapsed');
+    }
+  }
+
+  hideAllPeriodInputs() {
+    Object.values(this.dom.elements.inputs).forEach(input => {
+      this.dom.hideElement(input);
+    });
+  }
+
+  showPeriodInputs(period) {
+    const { inputs } = this.dom.elements;
+
+    this.hideAllPeriodInputs();
+
+    switch (period) {
+      case 'day':
+        this.dom.showElement(inputs.day);
+        break;
+      case 'week':
+        this.dom.showElement(inputs.week);
+        this.dom.showElement(inputs.year);
+        break;
+      case 'month':
+        this.dom.showElement(inputs.month);
+        break;
+    }
+  }
+}
+
+// ========================
+// NOTIFICATION MANAGER
+// ========================
+class NotificationManager {
+  constructor(apiService, uiManager, state) {
+    this.api = apiService;
+    this.ui = uiManager;
+    this.state = state;
+    this.isOpen = false;
+  }
+
+  async load() {
+    try {
+      const result = await this.api.getNotifications(
+        this.state.currentUser.id,
+        this.state.notificationPage
+      );
+      this.ui.updateNotifications(result);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      // Hiển thị message lỗi từ API hoặc message mặc định
+      this.ui.updateNotifications({
+        message: error.message || 'Không thể tải thông báo'
+      });
+    }
+  }
+
+  async delete(notificationId, liElement) {
+    try {
+      await this.api.deleteNotification(notificationId);
+      liElement.remove();
+
+      const badge = this.ui.dom.elements.notificationBadge;
+      badge.textContent = Number(badge.textContent) - 1;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  }
+
+  toggle() {
+    const { notificationDropdown, nextBtn, prevBtn } = this.ui.dom.elements;
+
+    this.isOpen = !this.isOpen;
+
+    if (this.isOpen) {
+      notificationDropdown.classList.remove('hidden');
+      nextBtn.style.display = 'inline-block';
+      prevBtn.style.display = 'inline-block';
+      this.state.notificationPage = 1;
+      this.load();
+    } else {
+      this.close();
+    }
+  }
+
+  close() {
+    const { notificationDropdown, nextBtn, prevBtn } = this.ui.dom.elements;
+    notificationDropdown.classList.add('hidden');
+    nextBtn.style.display = 'none';
+    prevBtn.style.display = 'none';
+    this.isOpen = false;
+  }
+
+  nextPage() {
+    this.state.notificationPage++;
+    this.load();
+  }
+
+  prevPage() {
+    if (this.state.notificationPage > 1) {
+      this.state.notificationPage--;
+      this.load();
+    }
+  }
+}
+
+// ========================
+// DASHBOARD MANAGER
+// ========================
+class DashboardManager {
+  constructor(apiService, uiManager, salesChartManager) {
+    this.api = apiService;
+    this.ui = uiManager;
+    this.chart = salesChartManager;
+  }
+
+  async loadByDay(date) {
+    try {
+      const formattedDate = typeof date === 'string' ? date : Utils.formatDate(date);
+      const result = await this.api.getStatisticsByDay(formattedDate);
+      this.ui.updateStatistics(result);
+
+      const yesterday = Utils.getPreviousDate(new Date(formattedDate));
+      const yesterdayFormatted = Utils.formatDate(yesterday);
+      await this.loadRevenueChange('day', yesterdayFormatted, formattedDate);
+    } catch (error) {
+      console.error('Error loading day statistics:', error);
+      this.ui.showError("Không thể tính được ngày trong tương lai");
+    }
+  }
+
+  async loadByWeek(week, year) {
+    try {
+      const result = await this.api.getStatisticsByWeek(week, year);
+      this.ui.updateStatistics(result);
+      await this.loadRevenueChange('week', week - 1, week, year);
+    } catch (error) {
+      console.error('Error loading week statistics:', error);
+      this.ui.showError("Không thể tính được tuần trong tương lai");
+    }
+  }
+
+  async loadByMonth(month) {
+    try {
+      const result = await this.api.getStatisticsByMonth(month);
+      this.ui.updateStatistics(result);
+
+      const currentYear = new Date().getFullYear();
+      await this.loadRevenueChange('month', month - 1, month, currentYear);
+    } catch (error) {
+      console.error('Error loading month statistics:', error);
+      this.ui.showError("Không thể tính được tháng trong tương lai");
+    }
+  }
+
+  async loadRevenueChange(type, lastPeriod, currentPeriod, year = null) {
+    try {
+      const data = await this.api.calculateRevenueChange(type, lastPeriod, currentPeriod, year);
+      this.ui.updateRevenueChange(data);
+    } catch (error) {
+      console.error('Error calculating revenue change:', error);
+    }
+  }
+
+  async loadDefault() {
+    try {
+      const today = Utils.formatDate(new Date());
+      await this.loadByDay(today);
+      await this.chart.reload(today);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      this.ui.showError('Có lỗi khi tải dữ liệu dashboard');
+    }
+  }
+}
+
+// ========================
+// EVENT HANDLER
+// ========================
+class EventHandler {
+  constructor(domManager, uiManager, state, dashboardManager, notificationManager, salesChartManager) {
+    this.dom = domManager;
+    this.ui = uiManager;
+    this.state = state;
+    this.dashboard = dashboardManager;
+    this.notification = notificationManager;
+    this.chart = salesChartManager;
+  }
+
+  setupAll() {
+    this.setupSidebar();
+    this.setupNavigation();
+    this.setupSubmenu();
+    this.setupLogout();
+    this.setupNotifications();
+    this.setupPeriodSelector();
+    this.setupRebuild();
+  }
+
+  setupSidebar() {
+    const { toggleBtn, mobileToggle } = this.dom.elements;
+
+    toggleBtn.addEventListener('click', () => this.ui.toggleSidebar());
+    mobileToggle.addEventListener('click', () => this.ui.openMobileSidebar());
+  }
+
+  setupNavigation() {
+    const { navItems } = this.dom.elements;
+
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        const page = item.getAttribute('data-page');
+        if (page) {
+          e.preventDefault();
+          this.navigateToPage(page, item);
+
+          if (window.innerWidth <= 768) {
+            this.ui.closeMobileSidebar();
+          }
+        }
+      });
+    });
+  }
+
+  navigateToPage(page, item) {
+    console.log(`Navigating to: ${page}`);
+    this.ui.updatePageTitle(page);
+
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    item.closest('.nav-item').classList.add('active');
+  }
+
+  setupSubmenu() {
+    const { hasSubmenuItems } = this.dom.elements;
+
+    hasSubmenuItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (!item.getAttribute('data-page')) {
+          e.preventDefault();
+          const submenuId = item.getAttribute('data-submenu');
+          const submenu = document.getElementById(submenuId);
+
+          submenu.classList.toggle('open');
+          item.classList.toggle('active');
+
+          hasSubmenuItems.forEach(other => {
+            if (other !== item) {
+              const otherSubmenuId = other.getAttribute('data-submenu');
+              const otherSubmenu = document.getElementById(otherSubmenuId);
+              if (otherSubmenu) {
+                otherSubmenu.classList.remove('open');
+                other.classList.remove('active');
+              }
+            }
+          });
+        }
+      });
+    });
+  }
+
+  setupLogout() {
+    const { logoutBtn } = this.dom.elements;
+
+    logoutBtn.addEventListener('click', () => {
+      if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        this.state.clearUser();
+        window.location.href = '../auth/Login.html';
+      }
+    });
+  }
+
+  setupNotifications() {
+    const { notificationBtn, notificationDropdown, nextBtn, prevBtn, notificationList } = this.dom.elements;
+
+    notificationDropdown.classList.add('hidden');
+    nextBtn.style.display = 'none';
+    prevBtn.style.display = 'none';
+
+    notificationBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.notification.toggle();
+    });
+
+    nextBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.notification.nextPage();
+    });
+
+    prevBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.notification.prevPage();
+    });
+
+    notificationList.addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (li) {
+        const notificationId = li.dataset.notificationId;
+        this.notification.delete(notificationId, li);
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notificationDropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
+        this.notification.close();
+      }
+    });
+  }
+
+  setupPeriodSelector() {
+    const { selectPeriod } = this.dom.elements;
+
+    this.ui.hideAllPeriodInputs();
+
+    selectPeriod.addEventListener('change', () => {
+      this.ui.showPeriodInputs(selectPeriod.value);
+    });
+  }
+
+  setupRebuild() {
+    const { rebuildBtn } = this.dom.elements;
+
+    rebuildBtn.addEventListener('click', () => {
+      this.handleRebuild();
+    });
+  }
+
+  handleRebuild() {
+    try {
+      const { selectPeriod, inputs } = this.dom.elements;
+      const type = selectPeriod.value;
+
+      if (!type) {
+        throw new Error('Chưa chọn loại thống kê');
+      }
+
+      if (type === 'day') {
+        const day = inputs.day.value;
+        if (!day) throw new Error('Vui lòng chọn ngày');
+        this.dashboard.loadByDay(day);
+        this.chart.reload(day);
+
+      } else if (type === 'week') {
+        const week = inputs.week.value;
+        const year = inputs.year.value;
+        if (!week || !year) throw new Error('Vui lòng nhập đầy đủ tuần và năm');
+        this.dashboard.loadByWeek(week, year);
+      } else if (type === 'month') {
+        const month = inputs.month.value;
+        if (!month) throw new Error('Vui lòng chọn tháng');
+        this.dashboard.loadByMonth(month);
+      } else {
+        throw new Error('Loại thống kê không hợp lệ');
+      }
+    } catch (error) {
+      console.error('Lỗi rebuild thống kê:', error);
+      alert(error.message);
+    }
+  }
+}
+
+// ========================
+// APPLICATION MAIN
+// ========================
+class DashboardApp {
+  constructor() {
+    this.state = new AppState();
+    this.domManager = new DOMManager();
+    this.apiService = new APIService(this.state.getAuthToken());
+    this.uiManager = new UIManager(this.domManager);
+    this.salesChartManager = new SalesChartManager(this.apiService);
+    this.dashboardManager = new DashboardManager(this.apiService, this.uiManager, this.salesChartManager);
+    this.notificationManager = new NotificationManager(this.apiService, this.uiManager, this.state);
+    this.eventHandler = new EventHandler(
+      this.domManager,
+      this.uiManager,
+      this.state,
+      this.dashboardManager,
+      this.notificationManager,
+      this.salesChartManager
+    );
+  }
+
+  init() {
+    // Load user
+    this.state.loadUser();
+    this.updateUserInfo();
+    this.toggleAdminFeatures();
+
+    // Setup UI
+    this.uiManager.restoreSidebarState();
+    this.eventHandler.setupAll();
+
+    // Load data
+    this.dashboardManager.loadDefault();
+    setInterval(() => this.dashboardManager.loadDefault(), REFRESH_INTERVAL);
+
+    // if (typeof Chart !== 'undefined') {
+    //   this.salesChartManager.load(date);
+    // } else {
+    //   console.error('Chart.js chưa được load');
+    // }
+
+    // Update datetime
+    this.uiManager.updateDateTime();
+    setInterval(() => this.uiManager.updateDateTime(), DATETIME_UPDATE_INTERVAL);
+  }
+
+  updateUserInfo() {
+    this.domManager.updateText('userName', this.state.currentUser.name);
+    this.domManager.updateText('userRole', this.state.currentUser.role);
+  }
+
+  toggleAdminFeatures() {
+    if (!this.state.currentUser.isAdmin) {
+      document.querySelectorAll('.admin-only').forEach(item => {
+        item.style.display = 'none';
+      });
+    }
+  }
+}
+
+// ========================
+// INITIALIZATION
+// ========================
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new DashboardApp();
+  app.init();
+
+  // Export for external use
+  window.dashboardApp = {
+    loadDashboardData: () => app.dashboardManager.loadDefault(),
+    navigateToPage: (page) => app.eventHandler.navigateToPage(page),
+    currentUser: app.state.currentUser,
+    chartManager: app.salesChartManager
+  };
+});

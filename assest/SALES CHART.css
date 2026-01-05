@@ -1,0 +1,21 @@
+#salesChart {
+    min-height: 300px;
+    max-height: 400px;
+}
+
+.dashboard-card .card-body {
+    position: relative;
+    min-height: 320px;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    #salesChart {
+        min-height: 250px;
+    }
+
+    .dashboard-card .card-body {
+        padding: 15px;
+        min-height: 280px;
+    }
+}

@@ -10,10 +10,11 @@ const config = {
     DASHBOARD_DAY: "/api/Dashboard/day",
     DASHBOARD_WEEK: "/api/Dashboard/week",
     DASHBOARD_MONTH: "/api/Dashboard/month",
-    RECENT_ORDERS: "/api/dashboard/recent-orders",
-    LOW_STOCK: "/api/dashboard/low-stock",
-    TOP_PRODUCTS: "/api/dashboard/top-products",
-    SALES_CHART: "/api/dashboard/sales-chart",
+    SELECTED_NOTIFICATIONS: "/api/Dashboard/notifications",
+    DELETED_NOTIFICATION: "/api/Dashboard/notification",
+    CalculateRevenueOfDay: "/api/Dashboard/revenue/day",
+    CalculateRevenueOfWeekAndMonth: "/api/Dashboard/revenue/week-month",
+    REVENUE_CHART: "/api/Dashboard/7dayrevenues",
 
     // Products (Quản lý Sản phẩm)
     PRODUCTS: "/api/products",

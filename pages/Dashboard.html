@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard - Hệ thống Quản lý</title>
   <link rel="stylesheet" href="../assest/Dashboard.css" />
+  <link rel="stylesheet" href="../assest/SALES CHART.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 
@@ -139,8 +140,16 @@
         <div class="header-item">
           <button class="notification-btn">
             <i class="fas fa-bell"></i>
-            <span class="badge">3</span>
+            <span class="badge">0</span>
           </button>
+
+          <div id="notification-dropdown" class="hidden">
+            <ul id="notification-list"></ul>
+            <div class="pagination">
+              <button id="prevBtn">Prev</button>
+              <button id="nextBtn">Next</button>
+            </div>
+          </div>
         </div>
         <div class="header-item">
           <span class="datetime" id="currentDateTime"></span>
@@ -194,7 +203,6 @@
               <h3>Đơn hàng hôm nay</h3>
               <p class="stat-value" id="todayOrders">0</p>
               <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> +8.2%
               </span>
             </div>
           </div>
@@ -208,7 +216,6 @@
               <h3>Tổng sản phẩm</h3>
               <p class="stat-value" id="totalProducts">0</p>
               <span class="stat-change neutral">
-                <i class="fas fa-minus"></i> 0%
               </span>
             </div>
           </div>
@@ -222,7 +229,6 @@
               <h3>Khách hàng</h3>
               <p class="stat-value" id="totalCustomers">0</p>
               <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> +5.3%
               </span>
             </div>
           </div>
