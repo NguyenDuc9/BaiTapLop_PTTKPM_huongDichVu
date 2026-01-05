@@ -9,8 +9,8 @@ const config = {
     // Dashboard
     DASHBOARD_STATS: "/api/dashboard/statistics",
     RECENT_ORDERS: "/api/dashboard/recent-orders",
-    LOW_STOCK: "/api/dashboard/low-stock",
-    TOP_PRODUCTS: "/api/dashboard/top-products",
+    LOW_STOCK: "/api/inventory/low-stock",
+    TOP_PRODUCTS: "/api/sales/top-products",
     SALES_CHART: "/api/dashboard/sales-chart",
     
     // Products (Quản lý Sản phẩm)
@@ -41,6 +41,7 @@ const config = {
     PRINT_INVOICE: "/api/sales/print-invoice/:id",
     CALCULATE_TOTAL: "/api/sales/calculate-total",
     PAYMENT: "/api/sales/payment",
+    INVOICES_COMPLETED: "/api/sales/completed",
     
     // Customers (Quản lý Khách hàng)
     CUSTOMERS: "/api/customers",

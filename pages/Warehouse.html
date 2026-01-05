@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý Kho - Hệ thống Quản lý</title>
+    <link rel="stylesheet" href="../assest/Dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
+        <button class="toggle-btn" id="toggleSidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item">
+            <a href="./Dashboard.html">
+              <i class="fas fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Products.html">
+              <i class="fas fa-box"></i>
+              <span>Quản lý Sản phẩm</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Promotions.html">
+              <i class="fas fa-gift"></i>
+              <span>Quản lý Khuyến mãi</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Taxes.html">
+              <i class="fas fa-percent"></i>
+              <span>Quản lý Thuế</span>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a href="./Warehouse.html">
+              <i class="fas fa-warehouse"></i>
+              <span>Quản lý Kho</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Customers.html">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Reports.html">
+              <i class="fas fa-chart-line"></i>
+              <span>Báo cáo thống kê</span>
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a href="./Users.html">
+              <i class="fas fa-user-cog"></i>
+              <span>Quản lý người dùng</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-details">
+            <span class="user-name" id="userName">Admin</span>
+            <span class="user-role" id="userRole">Quản trị viên</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobileToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="pageTitle">Quản lý Kho</h1>
+        </div>
+        <div class="header-right">
+          <div class="header-item">
+            <button class="notification-btn">
+              <i class="fas fa-bell"></i>
+              <span class="badge">3</span>
+            </button>
+          </div>
+          <div class="header-item">
+            <span class="datetime" id="currentDateTime"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="contentArea">
+        <section class="management-page">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-boxes"></i>
+                Tồn kho
+              </h3>
+              <div>
+                <button class="btn-small" id="btnOpenImportModalTop">
+                  <i class="fas fa-truck-loading"></i>
+                  Phiếu nhập hàng
+                </button>
+                <button class="btn-small" id="btnOpenExportModalTop">
+                  <i class="fas fa-truck"></i>
+                  Phiếu xuất hàng
+                </button>
+                <button class="btn-small" id="btnCreateInventory">
+                  <i class="fas fa-plus"></i>
+                  Tạo tồn kho
+                </button>
+                <button class="btn-small" id="btnAdjustInventory">
+                  <i class="fas fa-edit"></i>
+                  Điều chỉnh tồn
+                </button>
+                <button class="btn-small" id="btnExportInventory">
+                  <i class="fas fa-download"></i>
+                  Xuất Excel
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="inventorySearch">Tìm kiếm</label>
+                  <input id="inventorySearch" type="text" placeholder="Tên, mã sản phẩm" />
+                </div>
+                <div class="filter-group">
+                  <label for="inventoryStatusFilter">Lọc tồn kho</label>
+                  <select id="inventoryStatusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="normal">Bình thường</option>
+                    <option value="low">Sắp hết hàng</option>
+                    <option value="out">Hết hàng</option>
+                  </select>
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã SP</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Kho</th>
+                    <th>Tồn hiện tại</th>
+                    <th>Tồn tối thiểu</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center">Đang tải dữ liệu tồn kho...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Các phần Phiếu nhập hàng và Phiếu xuất hàng đã được xoá theo yêu cầu -->
+      </div>
+    </main>
+
+    <div class="modal" id="importReceiptModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>
+            <i class="fas fa-truck-loading"></i>
+            Tạo phiếu nhập hàng
+          </h3>
+          <button class="modal-close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="importReceiptCode">Mã phiếu nhập</label>
+              <input id="importReceiptCode" type="text" placeholder="VD: PN001" />
+            </div>
+            <div class="form-group">
+              <label for="importReceiptDate">Ngày nhập</label>
+              <input id="importReceiptDate" type="date" />
+            </div>
+            <div class="form-group">
+              <label for="importSupplier">Nhà cung cấp</label>
+              <input id="importSupplier" type="text" placeholder="Nhập tên nhà cung cấp" />
+            </div>
+            <div class="form-group">
+              <label for="importWarehouse">Kho nhập</label>
+              <input id="importWarehouse" type="text" placeholder="VD: Kho chính" />
+            </div>
+            <div class="form-group">
+              <label for="importTotalAmount">Tổng tiền</label>
+              <input id="importTotalAmount" type="number" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="importStatusSelect">Trạng thái</label>
+              <select id="importStatusSelect">
+                <option value="draft">Nháp</option>
+                <option value="completed">Hoàn thành</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="importNote">Ghi chú</label>
+            <textarea id="importNote" rows="3" placeholder="Thêm ghi chú cho phiếu nhập"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" data-close-modal>Hủy</button>
+            <button class="btn-primary" id="btnSaveImportReceipt">Lưu phiếu nhập</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="exportReceiptModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>
+            <i class="fas fa-truck"></i>
+            Tạo phiếu xuất hàng
+          </h3>
+          <button class="modal-close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="exportReceiptCode">Mã phiếu xuất</label>
+              <input id="exportReceiptCode" type="text" placeholder="VD: PX001" />
+            </div>
+            <div class="form-group">
+              <label for="exportReceiptDate">Ngày xuất</label>
+              <input id="exportReceiptDate" type="date" />
+            </div>
+            <div class="form-group">
+              <label for="exportWarehouse">Kho xuất</label>
+              <input id="exportWarehouse" type="text" placeholder="VD: Kho chính" />
+            </div>
+            <div class="form-group">
+              <label for="exportTotalAmount">Tổng tiền</label>
+              <input id="exportTotalAmount" type="number" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="exportStatusSelect">Trạng thái</label>
+              <select id="exportStatusSelect">
+                <option value="draft">Nháp</option>
+                <option value="completed">Hoàn thành</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="exportNote">Ghi chú</label>
+            <textarea id="exportNote" rows="3" placeholder="Thêm ghi chú cho phiếu xuất"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" data-close-modal>Hủy</button>
+            <button class="btn-primary" id="btnSaveExportReceipt">Lưu phiếu xuất</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="../script/Warehouse.js"></script>
+  </body>
+</html>

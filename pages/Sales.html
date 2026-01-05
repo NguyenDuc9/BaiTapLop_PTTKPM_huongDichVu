@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý Bán hàng - Hệ thống Quản lý</title>
+    <link rel="stylesheet" href="../assest/Dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
+        <button class="toggle-btn" id="toggleSidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item">
+            <a href="./Dashboard.html">
+              <i class="fas fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Products.html">
+              <i class="fas fa-box"></i>
+              <span>Quản lý Sản phẩm</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Taxes.html">
+              <i class="fas fa-percent"></i>
+              <span>Quản lý Thuế</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Warehouse.html">
+              <i class="fas fa-warehouse"></i>
+              <span>Quản lý Kho</span>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a href="./Sales.html">
+              <i class="fas fa-shopping-cart"></i>
+              <span>Quản lý Bán hàng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Customers.html">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Reports.html">
+              <i class="fas fa-chart-line"></i>
+              <span>Báo cáo thống kê</span>
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a href="./Users.html">
+              <i class="fas fa-user-cog"></i>
+              <span>Quản lý người dùng</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-details">
+            <span class="user-name" id="userName">Admin</span>
+            <span class="user-role" id="userRole">Quản trị viên</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobileToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="pageTitle">Quản lý Bán hàng</h1>
+        </div>
+        <div class="header-right">
+          <div class="header-item">
+            <button class="notification-btn">
+              <i class="fas fa-bell"></i>
+              <span class="badge">3</span>
+            </button>
+          </div>
+          <div class="header-item">
+            <span class="datetime" id="currentDateTime"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="contentArea">
+        <section class="management-page">
+          <div class="dashboard-grid">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>
+                  <i class="fas fa-cash-register"></i>
+                  Bán hàng tại quầy
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="filter-row">
+                  <div class="filter-group">
+                    <label for="posProductSearch">Tìm sản phẩm</label>
+                    <input id="posProductSearch" type="text" placeholder="Tên, mã sản phẩm" />
+                  </div>
+                  <div class="filter-group">
+                    <label for="posCustomerSearch">Khách hàng</label>
+                    <input id="posCustomerSearch" type="text" placeholder="Tên, SĐT khách hàng" />
+                  </div>
+                </div>
+                <div class="dashboard-grid">
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <h3>
+                        <i class="fas fa-list"></i>
+                        Giỏ hàng
+                      </h3>
+                    </div>
+                    <div class="card-body">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Mã SP</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
+                            <th>Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody id="posCartBody">
+                          <tr>
+                            <td colspan="6" class="text-center">Chưa có sản phẩm trong giỏ</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <h3>
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Thanh toán
+                      </h3>
+                    </div>
+                    <div class="card-body">
+                      <div class="form-group">
+                        <label for="posSubtotal">Tạm tính</label>
+                        <input id="posSubtotal" type="text" disabled value="0 đ" />
+                      </div>
+                      <div class="form-group">
+                        <label for="posDiscount">Giảm giá</label>
+                        <input id="posDiscount" type="number" placeholder="0" />
+                      </div>
+                      <div class="form-group">
+                        <label for="posTotal">Tổng thanh toán</label>
+                        <input id="posTotal" type="text" disabled value="0 đ" />
+                      </div>
+                      <div class="form-group">
+                        <label for="posPaymentMethod">Hình thức thanh toán</label>
+                        <select id="posPaymentMethod">
+                          <option value="cash">Tiền mặt</option>
+                          <option value="bank">Chuyển khoản</option>
+                          <option value="card">Thẻ</option>
+                        </select>
+                      </div>
+                      <div class="form-actions">
+                        <button class="btn-secondary">Làm mới</button>
+                        <button class="btn-primary">Thanh toán</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-file-invoice"></i>
+                Danh sách hóa đơn
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="invoiceSearch">Tìm kiếm</label>
+                  <input id="invoiceSearch" type="text" placeholder="Mã hóa đơn, khách hàng" />
+                </div>
+                <div class="filter-group">
+                  <label for="invoiceFromDate">Từ ngày</label>
+                  <input id="invoiceFromDate" type="date" />
+                </div>
+                <div class="filter-group">
+                  <label for="invoiceToDate">Đến ngày</label>
+                  <input id="invoiceToDate" type="date" />
+                </div>
+                <div class="filter-group">
+                  <label for="invoiceStatus">Trạng thái</label>
+                  <select id="invoiceStatus">
+                    <option value="">Tất cả</option>
+                    <option value="completed">Hoàn thành</option>
+                    <option value="pending">Chờ thanh toán</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã hóa đơn</th>
+                    <th>Thời gian</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center">Đang tải dữ liệu hóa đơn...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-print"></i>
+                In hóa đơn
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="printInvoiceCode">Mã hóa đơn</label>
+                <input id="printInvoiceCode" type="text" placeholder="Nhập mã hóa đơn cần in" />
+              </div>
+              <div class="form-actions">
+                <button class="btn-primary">Xem và in hóa đơn</button>
+              </div>
+              <div class="dashboard-card" style="margin-top: 16px;">
+                <div class="card-header">
+                  <h3>
+                    <i class="fas fa-file-alt"></i>
+                    Xem trước hóa đơn
+                  </h3>
+                </div>
+                <div class="card-body">
+                  <div id="printInvoicePreview" class="text-center">
+                    Nhập mã hóa đơn và nhấn nút để xem trước.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="../script/Sales.js"></script>
+  </body>
+</html>
