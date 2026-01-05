@@ -248,30 +248,6 @@
             </div>
           </div>
 
-          <!-- Recent Orders -->
-          <div class="dashboard-card">
-            <div class="card-header">
-              <h3><i class="fas fa-receipt"></i> Đơn hàng gần đây</h3>
-              <button class="btn-small">Xem tất cả</button>
-            </div>
-            <div class="card-body">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Mã HD</th>
-                    <th>Khách hàng</th>
-                    <th>Tổng tiền</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody id="recentOrdersTable">
-                  <tr>
-                    <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
           <!-- Low Stock Alert -->
           <div class="dashboard-card">
@@ -283,10 +259,11 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Mã HD</th>
-                    <th>Khách hàng</th>
-                    <th>Tổng tiền</th>
+                    <th>Mã Sản Phẩm</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Tên Loại sản phẩm</th>
                     <th>Số lượng</th>
+                    <th>Ngày Nhập</th>
                   </tr>
                 </thead>
                 <tbody id="hangTon">
@@ -305,13 +282,27 @@
               <button class="btn-small">Xem tất cả</button>
             </div>
             <div class="card-body">
-              <div class="product-list" id="topProducts">
-                <div class="text-center">Đang tải dữ liệu...</div>
-              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã Sản Phẩm</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Tên Loại sản phẩm</th>
+                    <th>Số lượng Bán</th>
+                    <th>Ngày Nhập</th>
+                  </tr>
+                </thead>
+                <tbody id="topProducts">
+                  <tr>
+                    <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </section>
+    </div>
+    </section>
     </div>
   </main>
 
