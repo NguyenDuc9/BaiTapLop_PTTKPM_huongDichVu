@@ -260,6 +260,124 @@ class SalesChartManager {
 }
 
 // ========================
+// INVENTORY WARNING MANAGER
+// ========================
+class InventoryWarningManager {
+  constructor(apiService) {
+    this.api = apiService;
+    this.tableBody = document.getElementById('hangTon');
+    this.currentPage = 1;
+
+    this.createPaginationControls();
+  }
+
+  /* ======================
+     PAGINATION UI
+  ====================== */
+  createPaginationControls() {
+    const card = this.tableBody?.closest('.dashboard-card, .card');
+    if (!card) return;
+
+    const div = document.createElement('div');
+    div.style.cssText = `
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+`;
+
+    div.innerHTML = `
+      <button id="prevPage">Prev</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage">Next</button>
+    `;
+
+    card.appendChild(div);
+
+    this.paginationDiv = div;
+    this.prevBtn = div.querySelector('#prevPage');
+    this.nextBtn = div.querySelector('#nextPage');
+    this.pageInfo = div.querySelector('#pageInfo');
+
+    this.prevBtn.onclick = () => this.load(this.currentPage - 1);
+    this.nextBtn.onclick = () => this.load(this.currentPage + 1);
+  }
+
+  /* ======================
+     API
+  ====================== */
+  async fetchInventoryWarnings(page) {
+    const url = `${config.getUrl(config.endpoints.INVENTORY_WARNINGS)}?pageNumber=${page}`;
+    try {
+      return await this.api.fetch(url);
+    } catch (err) {
+      // Backend trả message
+      return {
+        error: true,
+        status: err.status,
+        message: err.message || 'Không tìm thấy sản phẩm tồn trong kho'
+      };
+    }
+  }
+
+  /* ======================
+     RENDER
+  ====================== */
+  renderTable(data) {
+    this.tableBody.innerHTML = '';
+
+    // TRƯỜNG HỢP LỖI / KHÔNG CÓ DỮ LIỆU
+    if (data?.error || !Array.isArray(data) || data.length === 0) {
+      this.tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center;color:red">
+          ${data?.message || 'Không tìm thấy sản phẩm tồn trong kho'}
+        </td>
+      </tr>
+    `;
+      return;
+    }
+
+    // CÓ DỮ LIỆU
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+      <td>${item.productId}</td>
+      <td>${item.productName}</td>
+      <td>${item.categoryName}</td>
+      <td>${item.quantity}</td>
+    `;
+      this.tableBody.appendChild(row);
+    });
+  }
+
+  /* ======================
+     LOAD DATA
+  ====================== */
+  async load(page = 1) {
+    if (page < 1) return;
+
+    const data = await this.fetchInventoryWarnings(page);
+
+    // ✅ luôn cập nhật page trước
+    this.currentPage = page;
+
+    const hasData = Array.isArray(data) && data.length > 0;
+
+    this.renderTable(data);
+
+    this.paginationDiv.style.display = 'flex';
+    this.pageInfo.textContent = `Page ${this.currentPage}`;
+
+    this.prevBtn.disabled = this.currentPage === 1;
+    this.nextBtn.disabled = !hasData;
+  }
+}
+
+
+
+
+// ========================
 // STATE MANAGEMENT
 // ========================
 class AppState {
@@ -965,9 +1083,25 @@ class DashboardApp {
     this.domManager = new DOMManager();
     this.apiService = new APIService(this.state.getAuthToken());
     this.uiManager = new UIManager(this.domManager);
+
+    // Create SalesChartManager FIRST
     this.salesChartManager = new SalesChartManager(this.apiService);
-    this.dashboardManager = new DashboardManager(this.apiService, this.uiManager, this.salesChartManager);
-    this.notificationManager = new NotificationManager(this.apiService, this.uiManager, this.state);
+
+    // Then create DashboardManager (which needs salesChartManager)
+    this.dashboardManager = new DashboardManager(
+      this.apiService,
+      this.uiManager,
+      this.salesChartManager
+    );
+
+    this.notificationManager = new NotificationManager(
+      this.apiService,
+      this.uiManager,
+      this.state
+    );
+
+    this.inventoryWarningManager = new InventoryWarningManager(this.apiService);
+
     this.eventHandler = new EventHandler(
       this.domManager,
       this.uiManager,
@@ -991,12 +1125,7 @@ class DashboardApp {
     // Load data
     this.dashboardManager.loadDefault();
     setInterval(() => this.dashboardManager.loadDefault(), REFRESH_INTERVAL);
-
-    // if (typeof Chart !== 'undefined') {
-    //   this.salesChartManager.load(date);
-    // } else {
-    //   console.error('Chart.js chưa được load');
-    // }
+    this.inventoryWarningManager.load();
 
     // Update datetime
     this.uiManager.updateDateTime();
@@ -1029,6 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboardData: () => app.dashboardManager.loadDefault(),
     navigateToPage: (page) => app.eventHandler.navigateToPage(page),
     currentUser: app.state.currentUser,
-    chartManager: app.salesChartManager
+    chartManager: app.salesChartManager,
+    inventoryWarningManager: app.inventoryWarningManager
   };
 });

@@ -7,6 +7,7 @@
   <title>Dashboard - Hệ thống Quản lý</title>
   <link rel="stylesheet" href="../assest/Dashboard.css" />
   <link rel="stylesheet" href="../assest/SALES CHART.css" />
+  <link rel="stylesheet" href="../assest/HangTon.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 
@@ -276,17 +277,24 @@
           <div class="dashboard-card">
             <div class="card-header">
               <h3><i class="fas fa-exclamation-triangle"></i> Cảnh báo tồn kho</h3>
-              <button class="btn-small">Xem tất cả</button>
+
             </div>
             <div class="card-body">
-              <div class="alert-list" id="lowStockAlerts">
-                <div class="alert-item">
-                  <i class="fas fa-box text-danger"></i>
-                  <div>
-                    <p class="alert-title">Đang tải dữ liệu...</p>
-                  </div>
-                </div>
-              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã HD</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Số lượng</th>
+                  </tr>
+                </thead>
+                <tbody id="hangTon">
+                  <tr>
+                    <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 

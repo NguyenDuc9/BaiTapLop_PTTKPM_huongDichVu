@@ -15,6 +15,7 @@ const config = {
     CalculateRevenueOfDay: "/api/Dashboard/revenue/day",
     CalculateRevenueOfWeekAndMonth: "/api/Dashboard/revenue/week-month",
     REVENUE_CHART: "/api/Dashboard/7dayrevenues",
+    INVENTORY_WARNINGS: '/api/Dashboard/hangtons',
 
     // Products (Quản lý Sản phẩm)
     PRODUCTS: "/api/products",
