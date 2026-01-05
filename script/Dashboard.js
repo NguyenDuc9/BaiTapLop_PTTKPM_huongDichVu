@@ -275,16 +275,16 @@ class InventoryWarningManager {
      PAGINATION UI
   ====================== */
   createPaginationControls() {
-    const card = this.tableBody?.closest('.dashboard-card, .card');
+    const card = this.tableBody?.closest('.dashboard-card');
     if (!card) return;
 
     const div = document.createElement('div');
     div.style.cssText = `
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
-`;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+    `;
 
     div.innerHTML = `
       <button id="prevPage">Prev</button>
@@ -311,11 +311,83 @@ class InventoryWarningManager {
     try {
       return await this.api.fetch(url);
     } catch (err) {
-      // Backend trả message
       return {
         error: true,
-        status: err.status,
-        message: err.message || 'Không tìm thấy sản phẩm tồn trong kho'
+        message: err.message || 'Không tìm thấy sản phẩm tồn kho'
+      };
+    }
+  }
+
+  /* ======================
+     RENDER
+  ====================== */
+  renderTable(data) {
+    this.tableBody.innerHTML = '';
+
+    if (data?.error || !Array.isArray(data) || data.length === 0) {
+      this.tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;color:red">
+            ${data?.message || 'Không có sản phẩm tồn kho thấp'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.productId}</td>
+        <td>${item.productName}</td>
+        <td>${item.categoryName}</td>
+        <td>${item.quantity}</td>
+        <td>${new Date(item.createdAt).toLocaleDateString('vi-VN')}</td>
+      `;
+      this.tableBody.appendChild(row);
+    });
+  }
+
+  /* ======================
+     LOAD
+  ====================== */
+  async load(page = 1) {
+    if (page < 1) return;
+
+    const data = await this.fetchInventoryWarnings(page);
+
+    this.currentPage = page;
+    this.renderTable(data);
+
+    const hasData = Array.isArray(data) && data.length > 0;
+
+    this.paginationDiv.style.display = 'flex';
+    this.pageInfo.textContent = `Page ${this.currentPage}`;
+    this.prevBtn.disabled = this.currentPage === 1;
+    this.nextBtn.disabled = !hasData;
+  }
+}
+
+// ========================
+// TOP PRODUCT MANAGER
+// ========================
+class TopProductManager {
+  constructor(apiService) {
+    this.api = apiService;
+    this.tableBody = document.getElementById('topProducts');
+  }
+
+  /* ======================
+     API
+  ====================== */
+  async fetchTopProducts() {
+    const url = config.getUrl(config.endpoints.TOP_PRODUCTS);
+    try {
+      return await this.api.fetch(url);
+    } catch (err) {
+      return {
+        error: true,
+        message: err.message || 'Không tìm thấy sản phẩm bán chạy'
       };
     }
   }
@@ -329,48 +401,35 @@ class InventoryWarningManager {
     // TRƯỜNG HỢP LỖI / KHÔNG CÓ DỮ LIỆU
     if (data?.error || !Array.isArray(data) || data.length === 0) {
       this.tableBody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center;color:red">
-          ${data?.message || 'Không tìm thấy sản phẩm tồn trong kho'}
-        </td>
-      </tr>
-    `;
+        <tr>
+          <td colspan="5" style="text-align:center;color:red">
+            ${data?.message || 'Không có dữ liệu'}
+          </td>
+        </tr>
+      `;
       return;
     }
 
-    // CÓ DỮ LIỆU
+    // HIỂN THỊ ĐÚNG THỨ TỰ SERVER TRẢ VỀ
     data.forEach(item => {
       const row = document.createElement('tr');
       row.innerHTML = `
-      <td>${item.productId}</td>
-      <td>${item.productName}</td>
-      <td>${item.categoryName}</td>
-      <td>${item.quantity}</td>
-    `;
+        <td>${item.productId}</td>
+        <td>${item.productName}</td>
+        <td>${item.categoryName}</td>
+        <td>${item.quantity}</td>
+        <td>${new Date(item.createdAt).toLocaleDateString('vi-VN')}</td>
+      `;
       this.tableBody.appendChild(row);
     });
   }
 
   /* ======================
-     LOAD DATA
+     LOAD
   ====================== */
-  async load(page = 1) {
-    if (page < 1) return;
-
-    const data = await this.fetchInventoryWarnings(page);
-
-    // ✅ luôn cập nhật page trước
-    this.currentPage = page;
-
-    const hasData = Array.isArray(data) && data.length > 0;
-
+  async load() {
+    const data = await this.fetchTopProducts();
     this.renderTable(data);
-
-    this.paginationDiv.style.display = 'flex';
-    this.pageInfo.textContent = `Page ${this.currentPage}`;
-
-    this.prevBtn.disabled = this.currentPage === 1;
-    this.nextBtn.disabled = !hasData;
   }
 }
 
@@ -1101,6 +1160,7 @@ class DashboardApp {
     );
 
     this.inventoryWarningManager = new InventoryWarningManager(this.apiService);
+    this.topProductManager = new TopProductManager(this.apiService);
 
     this.eventHandler = new EventHandler(
       this.domManager,
@@ -1126,6 +1186,7 @@ class DashboardApp {
     this.dashboardManager.loadDefault();
     setInterval(() => this.dashboardManager.loadDefault(), REFRESH_INTERVAL);
     this.inventoryWarningManager.load();
+    this.topProductManager.load();
 
     // Update datetime
     this.uiManager.updateDateTime();
@@ -1159,6 +1220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateToPage: (page) => app.eventHandler.navigateToPage(page),
     currentUser: app.state.currentUser,
     chartManager: app.salesChartManager,
-    inventoryWarningManager: app.inventoryWarningManager
+    inventoryWarningManager: app.inventoryWarningManager,
+    topProductManager: app.topProductManager
   };
 });
