@@ -9,8 +9,8 @@ const config = {
     // Dashboard
     DASHBOARD_STATS: "/api/dashboard/statistics",
     RECENT_ORDERS: "/api/dashboard/recent-orders",
-    LOW_STOCK: "/api/dashboard/low-stock",
-    TOP_PRODUCTS: "/api/dashboard/top-products",
+    LOW_STOCK: "/api/inventory/low-stock",
+    TOP_PRODUCTS: "/api/sales/top-products",
     SALES_CHART: "/api/dashboard/sales-chart",
     
     // Products (Quản lý Sản phẩm)
@@ -28,8 +28,8 @@ const config = {
     CATEGORY_DELETE: "/api/category/:id",
     
     // Warehouse (Quản lý Kho)
-    INVENTORY: "/api/warehouse/inventory",
-    INVENTORY_BY_ID: "/api/warehouse/inventory/:id",
+    INVENTORY: "/api/inventory",
+    INVENTORY_BY_ID: "/api/inventory/:id",
     IMPORT_GOODS: "/api/warehouse/import",
     EXPORT_GOODS: "/api/warehouse/export",
     INVENTORY_UPDATE: "/api/warehouse/update-stock",
@@ -41,6 +41,7 @@ const config = {
     PRINT_INVOICE: "/api/sales/print-invoice/:id",
     CALCULATE_TOTAL: "/api/sales/calculate-total",
     PAYMENT: "/api/sales/payment",
+    INVOICES_COMPLETED: "/api/sales/completed",
     
     // Customers (Quản lý Khách hàng)
     CUSTOMERS: "/api/customers",

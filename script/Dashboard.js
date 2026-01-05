@@ -21,9 +21,20 @@ let currentUser = {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
-  loadDashboardData();
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
+
+  const hasDashboardSection =
+    document.getElementById('todayRevenue') ||
+    document.getElementById('salesChart') ||
+    document.querySelector('.dashboard-home');
+
+  if (hasDashboardSection) {
+    loadDashboardData();
+  }
+
+  if (currentDateTime) {
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+  }
 });
 
 // ===== INITIALIZE APP =====
@@ -124,6 +135,13 @@ function setupEventListeners() {
   if (sidebarCollapsed === 'true') {
     sidebar.classList.add('collapsed');
   }
+
+  const taxButton = document.getElementById('btnGoToTaxes');
+  if (taxButton) {
+    taxButton.addEventListener('click', () => {
+      window.location.href = './Taxes.html';
+    });
+  }
 }
 
 // ===== NAVIGATION =====
@@ -139,6 +157,7 @@ function getPageTitle(page) {
     'product-list': 'Danh sách sản phẩm',
     'product-add': 'Thêm sản phẩm',
     'category': 'Danh mục sản phẩm',
+    'taxes': 'Quản lý thuế',
     'inventory': 'Quản lý tồn kho',
     'import': 'Phiếu nhập hàng',
     'export': 'Phiếu xuất hàng',
@@ -153,6 +172,7 @@ function getPageTitle(page) {
     'report-customer': 'Báo cáo khách hàng',
     'users': 'Quản lý người dùng'
   };
+  
   return titles[page] || 'Dashboard';
 }
 
@@ -276,15 +296,43 @@ async function loadStatistics() {
 }
 
 function updateStatistics(data) {
-  document.getElementById('todayRevenue').textContent = formatCurrency(data.todayRevenue);
-  document.getElementById('todayOrders').textContent = data.todayOrders;
-  document.getElementById('totalProducts').textContent = data.totalProducts;
-  document.getElementById('totalCustomers').textContent = data.totalCustomers;
+  const todayRevenueEl = document.getElementById('todayRevenue');
+  const todayOrdersEl = document.getElementById('todayOrders');
+  const totalProductsEl = document.getElementById('totalProducts');
+  const totalCustomersEl = document.getElementById('totalCustomers');
+
+  if (!todayRevenueEl || !todayOrdersEl || !totalProductsEl || !totalCustomersEl) {
+    return;
+  }
+
+  todayRevenueEl.textContent = formatCurrency(data.todayRevenue);
+  todayOrdersEl.textContent = data.todayOrders;
+  totalProductsEl.textContent = data.totalProducts;
+  totalCustomersEl.textContent = data.totalCustomers;
 }
 
 async function loadRecentOrders() {
+  const tbody = document.getElementById('recentOrdersTable');
+  if (!tbody) {
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="4" class="text-center">Đang tải dữ liệu đơn hàng...</td></tr>';
+
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  const to = formatDateInputValue(today);
+  const from = formatDateInputValue(sevenDaysAgo);
+
+  const url = config.buildUrlWithQuery(config.endpoints.INVOICES_COMPLETED, {
+    from,
+    to
+  });
+
   try {
-    const response = await fetch(config.getUrl(config.endpoints.RECENT_ORDERS), {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -292,41 +340,62 @@ async function loadRecentOrders() {
       }
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load orders');
+    let rawResult;
+    const text = await response.text();
+    try {
+      rawResult = text ? JSON.parse(text) : null;
+    } catch {
+      rawResult = text;
     }
 
-    const data = await response.json();
-    displayRecentOrders(data);
+    if (!response.ok) {
+      console.error('Failed to load orders', response.status, rawResult);
+      const message = rawResult && rawResult.message ? rawResult.message : 'Không tải được danh sách đơn hàng.';
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center">${message}</td></tr>`;
+      return;
+    }
+
+    displayRecentOrders(rawResult);
   } catch (error) {
     console.error('Error loading orders:', error);
-    // Use mock data
-    displayRecentOrders([
-      { id: 'HD001', customer: 'Nguyễn Văn A', total: 250000, status: 'completed' },
-      { id: 'HD002', customer: 'Trần Thị B', total: 180000, status: 'pending' },
-      { id: 'HD003', customer: 'Lê Văn C', total: 450000, status: 'completed' },
-      { id: 'HD004', customer: 'Phạm Thị D', total: 320000, status: 'processing' },
-      { id: 'HD005', customer: 'Hoàng Văn E', total: 190000, status: 'completed' }
-    ]);
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Có lỗi khi tải dữ liệu đơn hàng.</td></tr>';
   }
 }
 
-function displayRecentOrders(orders) {
+function displayRecentOrders(data) {
   const tbody = document.getElementById('recentOrdersTable');
+  if (!tbody) {
+    return;
+  }
   
+  let orders = [];
+  if (Array.isArray(data)) {
+    orders = data;
+  } else if (data && Array.isArray(data.items)) {
+    orders = data.items;
+  }
+
   if (orders.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" class="text-center">Không có đơn hàng nào</td></tr>';
     return;
   }
 
-  tbody.innerHTML = orders.map(order => `
-    <tr>
-      <td><strong>${order.id}</strong></td>
-      <td>${order.customer}</td>
-      <td>${formatCurrency(order.total)}</td>
-      <td><span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span></td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = orders.map(order => {
+    const id = order.invoiceNumber || order.invoiceCode || order.code || order.id || '';
+    const customerName = order.customerName || order.customer || order.customerFullName || '';
+    const total = getNumberValue(order.totalAmount ?? order.total ?? order.grandTotal ?? order.amount);
+    const rawStatus = order.status || order.paymentStatus || order.invoiceStatus || '';
+    const normalizedStatus = normalizeOrderStatus(rawStatus);
+
+    return `
+      <tr>
+        <td><strong>${id}</strong></td>
+        <td>${customerName}</td>
+        <td>${formatCurrency(total)}</td>
+        <td><span class="status-badge ${getStatusClass(normalizedStatus)}">${getStatusText(normalizedStatus)}</span></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 async function loadLowStockAlerts() {
@@ -358,6 +427,9 @@ async function loadLowStockAlerts() {
 
 function displayLowStockAlerts(alerts) {
   const container = document.getElementById('lowStockAlerts');
+  if (!container) {
+    return;
+  }
   
   if (alerts.length === 0) {
     container.innerHTML = '<div class="text-center">Không có cảnh báo tồn kho</div>';
@@ -376,8 +448,28 @@ function displayLowStockAlerts(alerts) {
 }
 
 async function loadTopProducts() {
+  const container = document.getElementById('topProducts');
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = '<div class="text-center">Đang tải dữ liệu sản phẩm bán chạy...</div>';
+
   try {
-    const response = await fetch(config.getUrl(config.endpoints.TOP_PRODUCTS), {
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const to = formatDateInputValue(today);
+    const from = formatDateInputValue(sevenDaysAgo);
+
+    const url = config.buildUrlWithQuery(config.endpoints.TOP_PRODUCTS, {
+      from,
+      to,
+      top: 5
+    });
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -385,42 +477,61 @@ async function loadTopProducts() {
       }
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load products');
+    let rawResult;
+    const text = await response.text();
+    try {
+      rawResult = text ? JSON.parse(text) : null;
+    } catch {
+      rawResult = text;
     }
 
-    const data = await response.json();
-    displayTopProducts(data);
+    if (!response.ok) {
+      console.error('Failed to load products', response.status, rawResult);
+      const message = rawResult && rawResult.message ? rawResult.message : 'Không tải được dữ liệu sản phẩm bán chạy.';
+      container.innerHTML = `<div class="text-center">${message}</div>`;
+      return;
+    }
+
+    displayTopProducts(rawResult);
   } catch (error) {
     console.error('Error loading products:', error);
-    // Use mock data
-    displayTopProducts([
-      { name: 'Coca Cola 330ml', sold: 145, revenue: 7250000 },
-      { name: 'Pepsi 330ml', sold: 128, revenue: 6400000 },
-      { name: 'Snack Oishi', sold: 95, revenue: 2375000 },
-      { name: 'Bánh Oreo', sold: 87, revenue: 2175000 },
-      { name: 'Nước suối Lavie', sold: 76, revenue: 1520000 }
-    ]);
+    container.innerHTML = '<div class="text-center">Có lỗi khi tải dữ liệu sản phẩm bán chạy.</div>';
   }
 }
 
-function displayTopProducts(products) {
+function displayTopProducts(data) {
   const container = document.getElementById('topProducts');
-  
+  if (!container) {
+    return;
+  }
+
+  let products = [];
+  if (Array.isArray(data)) {
+    products = data;
+  } else if (data && Array.isArray(data.items)) {
+    products = data.items;
+  }
+
   if (products.length === 0) {
     container.innerHTML = '<div class="text-center">Không có dữ liệu</div>';
     return;
   }
 
-  container.innerHTML = products.map((product, index) => `
-    <div class="alert-item" style="border-left-color: var(--success-color);">
-      <i class="fas fa-medal" style="color: ${getMedalColor(index)};"></i>
-      <div style="flex: 1;">
-        <p class="alert-title">${product.name}</p>
-        <small style="color: var(--text-secondary);">Đã bán: ${product.sold} - Doanh thu: ${formatCurrency(product.revenue)}</small>
+  container.innerHTML = products.map((product, index) => {
+    const name = product.productName || product.name || '';
+    const sold = getNumberValue(product.totalQuantity ?? product.sold ?? product.quantity);
+    const revenue = getNumberValue(product.totalRevenue ?? product.revenue ?? product.amount);
+
+    return `
+      <div class="alert-item" style="border-left-color: var(--success-color);">
+        <i class="fas fa-medal" style="color: ${getMedalColor(index)};"></i>
+        <div style="flex: 1;">
+          <p class="alert-title">${name}</p>
+          <small style="color: var(--text-secondary);">Đã bán: ${sold} - Doanh thu: ${formatCurrency(revenue)}</small>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function getMedalColor(index) {
@@ -522,8 +633,41 @@ function renderSalesChart(ctx, data) {
     }
   });
 }
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+function getNumberValue(value) {
+  const n = Number(value);
+  if (Number.isNaN(n)) {
+    return 0;
+  }
+  return n;
+}
 
-// ===== UTILITY FUNCTIONS =====
+function normalizeOrderStatus(status) {
+  if (!status) {
+    return '';
+  }
+  const s = String(status).toLowerCase().trim();
+
+  if (['completed', 'complete', 'done', 'success', 'successful', 'paid'].includes(s)) {
+    return 'completed';
+  }
+  if (['processing', 'in_progress', 'in progress'].includes(s)) {
+    return 'processing';
+  }
+  if (['pending', 'new', 'awaiting_payment', 'unpaid', 'waiting'].includes(s)) {
+    return 'pending';
+  }
+  if (['cancelled', 'canceled', 'void', 'rejected'].includes(s)) {
+    return 'cancelled';
+  }
+  return s;
+}
+
 function formatCurrency(amount, short = false) {
   if (short && amount >= 1000000) {
     return (amount / 1000000).toFixed(1) + 'M đ';

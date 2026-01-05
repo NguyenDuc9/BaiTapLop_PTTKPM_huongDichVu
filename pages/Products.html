@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý Sản phẩm - Hệ thống Quản lý</title>
+    <link rel="stylesheet" href="../assest/Dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
+        <button class="toggle-btn" id="toggleSidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item">
+            <a href="./Dashboard.html">
+              <i class="fas fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a href="./Products.html">
+              <i class="fas fa-box"></i>
+              <span>Quản lý Sản phẩm</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Promotions.html">
+              <i class="fas fa-gift"></i>
+              <span>Quản lý Khuyến mãi</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Taxes.html">
+              <i class="fas fa-percent"></i>
+              <span>Quản lý Thuế</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Warehouse.html">
+              <i class="fas fa-warehouse"></i>
+              <span>Quản lý Kho</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Customers.html">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Reports.html">
+              <i class="fas fa-chart-line"></i>
+              <span>Báo cáo thống kê</span>
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a href="./Users.html">
+              <i class="fas fa-user-cog"></i>
+              <span>Quản lý người dùng</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-details">
+            <span class="user-name" id="userName">Admin</span>
+            <span class="user-role" id="userRole">Quản trị viên</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobileToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="pageTitle">Quản lý Sản phẩm</h1>
+        </div>
+        <div class="header-right">
+          <div class="header-item">
+            <button class="notification-btn">
+              <i class="fas fa-bell"></i>
+              <span class="badge">3</span>
+            </button>
+          </div>
+          <div class="header-item">
+            <span class="datetime" id="currentDateTime"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="contentArea">
+        <section class="management-page" id="taxesSection">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-box"></i>
+                Danh sách sản phẩm
+              </h3>
+              <button class="btn-small" id="btnOpenAddProductModal">
+                <i class="fas fa-plus"></i>
+                Thêm sản phẩm
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="productSearchInput">Tìm kiếm</label>
+                  <input id="productSearchInput" type="text" placeholder="Tên, mã sản phẩm" />
+                </div>
+                <div class="filter-group">
+                  <label for="productCategoryFilter">Danh mục</label>
+                  <select id="productCategoryFilter">
+                    <option value="">Tất cả</option>
+                    <option value="beverage">Đồ uống</option>
+                    <option value="snack">Snack</option>
+                    <option value="food">Thực phẩm</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label for="productStatusFilter">Trạng thái</label>
+                  <select id="productStatusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                    <option value="low-stock">Sắp hết hàng</option>
+                  </select>
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã SP</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>Giá bán</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th style="width: 150px;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="productTableBody">
+                  <tr>
+                    <td colspan="7" class="text-center">Đang tải dữ liệu sản phẩm...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page">
+          <div class="dashboard-grid single">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>
+                  <i class="fas fa-tags"></i>
+                  Danh mục sản phẩm
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="form-inline">
+                  <div class="form-group">
+                    <label for="categoryName">Tên danh mục</label>
+                    <input id="categoryName" type="text" placeholder="VD: Đồ uống" />
+                  </div>
+                  <div class="form-group">
+                    <label for="categoryCode">Mã danh mục</label>
+                    <input id="categoryCode" type="text" placeholder="VD: BEVERAGE" />
+                  </div>
+                  <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn-primary full-width">Thêm danh mục</button>
+                  </div>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Tên danh mục</th>
+                      <th>Số sản phẩm</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="categoryTableBody">
+                    <tr>
+                      <td colspan="5" class="text-center">Đang tải dữ liệu danh mục...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <div class="modal" id="addProductModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>
+            <i class="fas fa-plus"></i>
+            Thêm sản phẩm mới
+          </h3>
+          <button class="modal-close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="productCode">Mã sản phẩm</label>
+              <input id="productCode" type="text" placeholder="VD: SP001" />
+            </div>
+            <div class="form-group">
+              <label for="productName">Tên sản phẩm</label>
+              <input id="productName" type="text" placeholder="Nhập tên sản phẩm" />
+            </div>
+            <div class="form-group">
+              <label for="productCategory">Danh mục</label>
+              <select id="productCategory">
+                <option value="">Chọn danh mục</option>
+                <option value="beverage">Đồ uống</option>
+                <option value="snack">Snack</option>
+                <option value="food">Thực phẩm</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="productUnit">Đơn vị tính</label>
+              <input id="productUnit" type="text" placeholder="Chai, lon, gói..." />
+            </div>
+            <div class="form-group">
+              <label for="productCost">Giá nhập</label>
+              <input id="productCost" type="number" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="productPrice">Giá bán</label>
+              <input id="productPrice" type="number" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="initialStock">Tồn kho ban đầu</label>
+              <input id="initialStock" type="number" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="minStock">Tồn kho tối thiểu</label>
+              <input id="minStock" type="number" placeholder="0" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="productDescription">Mô tả</label>
+            <textarea id="productDescription" rows="3" placeholder="Mô tả chi tiết sản phẩm"></textarea>
+          </div>
+          <div class="form-group inline">
+            <label>
+              <input id="productActive" type="checkbox" checked />
+              Cho phép bán
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" data-close-modal>Hủy</button>
+            <button class="btn-primary">Lưu sản phẩm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="../script/Products.js"></script>
+  </body>
+</html>

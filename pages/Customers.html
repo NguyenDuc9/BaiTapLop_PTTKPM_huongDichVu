@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Khách hàng - Hệ thống Quản lý</title>
+    <link rel="stylesheet" href="../assest/Dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-store"></i> Quản lý Cửa hàng</h2>
+        <button class="toggle-btn" id="toggleSidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item">
+            <a href="./Dashboard.html">
+              <i class="fas fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Products.html">
+              <i class="fas fa-box"></i>
+              <span>Quản lý Sản phẩm</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Promotions.html">
+              <i class="fas fa-gift"></i>
+              <span>Quản lý Khuyến mãi</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Taxes.html">
+              <i class="fas fa-percent"></i>
+              <span>Quản lý Thuế</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Warehouse.html">
+              <i class="fas fa-warehouse"></i>
+              <span>Quản lý Kho</span>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a href="./Customers.html">
+              <i class="fas fa-users"></i>
+              <span>Khách hàng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="./Reports.html">
+              <i class="fas fa-chart-line"></i>
+              <span>Báo cáo thống kê</span>
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a href="./Users.html">
+              <i class="fas fa-user-cog"></i>
+              <span>Quản lý người dùng</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-details">
+            <span class="user-name" id="userName">Admin</span>
+            <span class="user-role" id="userRole">Quản trị viên</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobileToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="pageTitle">Khách hàng</h1>
+        </div>
+        <div class="header-right">
+          <div class="header-item">
+            <button class="notification-btn">
+              <i class="fas fa-bell"></i>
+              <span class="badge">3</span>
+            </button>
+          </div>
+          <div class="header-item">
+            <span class="datetime" id="currentDateTime"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="contentArea">
+        <section class="management-page">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-users"></i>
+                Danh sách khách hàng
+              </h3>
+              <button class="btn-small">
+                <i class="fas fa-user-plus"></i>
+                Thêm khách hàng
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="customerSearchInput">Tìm kiếm</label>
+                  <input id="customerSearchInput" type="text" placeholder="Tên, SĐT, mã khách hàng" />
+                </div>
+                <div class="filter-group">
+                  <label for="customerTierFilter">Hạng khách hàng</label>
+                  <select id="customerTierFilter">
+                    <option value="">Tất cả</option>
+                    <option value="standard">Thường</option>
+                    <option value="silver">Bạc</option>
+                    <option value="gold">Vàng</option>
+                    <option value="platinum">Kim cương</option>
+                  </select>
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã KH</th>
+                    <th>Tên khách hàng</th>
+                    <th>Số điện thoại</th>
+                    <th>Email</th>
+                    <th>Điểm tích lũy</th>
+                    <th>Hạng</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>KH001</strong></td>
+                    <td>Nguyễn Văn A</td>
+                    <td>0901 234 567</td>
+                    <td>a.nguyen@example.com</td>
+                    <td>1.250</td>
+                    <td><span class="status-badge success">Vàng</span></td>
+                    <td>
+                      <button class="btn-link">Chi tiết</button>
+                      <button class="btn-link">Lịch sử</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>KH002</strong></td>
+                    <td>Trần Thị B</td>
+                    <td>0902 345 678</td>
+                    <td>b.tran@example.com</td>
+                    <td>320</td>
+                    <td><span class="status-badge warning">Bạc</span></td>
+                    <td>
+                      <button class="btn-link">Chi tiết</button>
+                      <button class="btn-link">Lịch sử</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page">
+          <div class="dashboard-grid">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>
+                  <i class="fas fa-star"></i>
+                  Tổng quan tích điểm
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="stats-grid compact">
+                  <div class="stat-card">
+                    <div class="stat-icon orange">
+                      <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-details">
+                      <h3>Tổng điểm đã cấp</h3>
+                      <p class="stat-value">125.000</p>
+                    </div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon green">
+                      <i class="fas fa-gift"></i>
+                    </div>
+                    <div class="stat-details">
+                      <h3>Điểm đã sử dụng</h3>
+                      <p class="stat-value">42.500</p>
+                    </div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon purple">
+                      <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <div class="stat-details">
+                      <h3>Điểm còn lại</h3>
+                      <p class="stat-value">82.500</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>
+                  <i class="fas fa-list"></i>
+                  Lịch sử tích điểm
+                </h3>
+              </div>
+              <div class="card-body">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Thời gian</th>
+                      <th>Khách hàng</th>
+                      <th>Hóa đơn</th>
+                      <th>Điểm cộng</th>
+                      <th>Điểm trừ</th>
+                      <th>Ghi chú</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>01/01/2025 09:15</td>
+                      <td>Nguyễn Văn A</td>
+                      <td>HD001</td>
+                      <td>+125</td>
+                      <td>0</td>
+                      <td>Mua hàng tại quầy</td>
+                    </tr>
+                    <tr>
+                      <td>02/01/2025 14:20</td>
+                      <td>Trần Thị B</td>
+                      <td>HD002</td>
+                      <td>+80</td>
+                      <td>0</td>
+                      <td>Mua hàng tại quầy</td>
+                    </tr>
+                    <tr>
+                      <td>03/01/2025 10:05</td>
+                      <td>Nguyễn Văn A</td>
+                      <td>HD003</td>
+                      <td>0</td>
+                      <td>-200</td>
+                      <td>Đổi quà</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="management-page">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-history"></i>
+                Lịch sử mua hàng
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label for="historyCustomerSearch">Khách hàng</label>
+                  <input id="historyCustomerSearch" type="text" placeholder="Tên, SĐT, mã khách hàng" />
+                </div>
+                <div class="filter-group">
+                  <label for="historyFromDate">Từ ngày</label>
+                  <input id="historyFromDate" type="date" />
+                </div>
+                <div class="filter-group">
+                  <label for="historyToDate">Đến ngày</label>
+                  <input id="historyToDate" type="date" />
+                </div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Mã hóa đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Số sản phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Hình thức</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>01/01/2025</td>
+                    <td><strong>HD001</strong></td>
+                    <td>Nguyễn Văn A</td>
+                    <td>5</td>
+                    <td>350.000 đ</td>
+                    <td>Tiền mặt</td>
+                  </tr>
+                  <tr>
+                    <td>02/01/2025</td>
+                    <td><strong>HD002</strong></td>
+                    <td>Trần Thị B</td>
+                    <td>3</td>
+                    <td>210.000 đ</td>
+                    <td>Chuyển khoản</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="../script/Customers.js"></script>
+  </body>
+</html>
