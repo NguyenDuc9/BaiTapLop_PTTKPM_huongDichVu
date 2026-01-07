@@ -1,5 +1,5 @@
 const config = {
-  API_URL: "https://localhost:7242",
+  API_URL: "https://localhost:7026",
 
   endpoints: {
     // Authentication
